@@ -8,4 +8,5 @@ import java.util.List;
  */
 public interface Dataset {
     List<Instance> getDocuments();
+    void addDocument(Instance document);
 }
