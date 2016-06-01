@@ -52,5 +52,27 @@
             <version>2.0.8</version>
         </dependency>
 
+        <!-- http://mvnrepository.com/artifact/org.sweble.wikitext/swc-engine -->
+        <dependency>
+            <groupId>org.sweble.wikitext</groupId>
+            <artifactId>swc-engine</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
+        <!-- http://mvnrepository.com/artifact/org.sweble.wikitext/swc-article-cruncher -->
+        <dependency>
+            <groupId>org.sweble.wikitext</groupId>
+            <artifactId>swc-article-cruncher</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
+        <!-- http://mvnrepository.com/artifact/org.sweble.wikitext/swc-dumpreader -->
+        <dependency>
+            <groupId>org.sweble.wikitext</groupId>
+            <artifactId>swc-example-dumpcruncher</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
+
     </dependencies>
 </project>
