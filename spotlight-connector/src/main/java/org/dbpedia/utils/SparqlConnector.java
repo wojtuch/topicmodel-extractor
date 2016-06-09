@@ -39,23 +39,23 @@ public class SparqlConnector {
         this.endpointUri = endpointUri;
     }
 
-    public List<String> getTypes(String resourceUri) throws IOException {
+    public List<String> getTypes(String resourceUri) {
         return selectObject(resourceUri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
     }
 
-    public List<String> getCategories(String resourceUri) throws IOException {
+    public List<String> getCategories(String resourceUri) {
         return selectObject(resourceUri, "http://purl.org/dc/terms/subject");
     }
 
-    public List<String> getHypernyms(String resourceUri) throws IOException {
+    public List<String> getHypernyms(String resourceUri) {
         return selectObject(resourceUri, "http://purl.org/linguistics/gold/hypernym", "hypernyms");
     }
 
-    private List<String> selectObject(String s, String p) throws IOException {
+    private List<String> selectObject(String s, String p) {
         return selectObject(s, p, Constants.DEFAULT_GRAPH_URI);
     }
 
-    private List<String> selectObject(String s, String p, String graphUri) throws IOException {
+    private List<String> selectObject(String s, String p, String graphUri) {
         String varName = "tempVar";
         List<String> result = new ArrayList<>();
 
@@ -83,14 +83,19 @@ public class SparqlConnector {
 
         get.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
 
-        HttpResponse response = client.execute(get);
+        HttpResponse response = null;
+        try {
+            response = client.execute(get);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         String jsonText = null;
         try {
             jsonText = IOUtils.toString(response.getEntity().getContent(), "UTF-8").trim();
         } catch (IOException e) {
             //TODO: log the exception
-            throw e;
+            return result;
         }
 
         JSONObject json;
