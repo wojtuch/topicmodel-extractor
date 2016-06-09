@@ -1,13 +1,20 @@
 package org.dbpedia.topics.dataset.models;
 
+import org.dbpedia.utils.annotation.models.SpotlightAnnotation;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Representation of the single document used for topic modelling.
  * Created by wlu on 26.05.16.
  */
 public abstract class Instance {
 
-    private String text;
-    private String uri;
+    protected String text;
+    protected String uri;
+    protected SpotlightAnnotation spotlightAnnotation;
+    protected List<String> hypernyms = new ArrayList<>();
 
     /**
      * Returns the URI of this document.
@@ -39,5 +46,48 @@ public abstract class Instance {
      */
     public void setText(String text) {
         this.text = text;
+    }
+
+    /**
+     * Returns the annotation of this document.
+     * @return
+     */
+    public SpotlightAnnotation getSpotlightAnnotation() {
+        return spotlightAnnotation;
+    }
+
+    /**
+     * Sets the annotation of this document.
+     * @param spotlightAnnotation
+     */
+    public void setSpotlightAnnotation(SpotlightAnnotation spotlightAnnotation) {
+        this.spotlightAnnotation = spotlightAnnotation;
+    }
+
+    /**
+     * Gets the hypernyms (objects with the property http://purl.org/linguistics/gold/hypernym) of the spotted entities
+     * within this document.
+     * @return
+     */
+    public List<String> getHypernyms() {
+        return hypernyms;
+    }
+
+    /**
+     * Sets the hypernyms (objects with the property http://purl.org/linguistics/gold/hypernym) of the spotted entities
+     * within this document.
+     * @param hypernyms
+     */
+    public void setHypernyms(List<String> hypernyms) {
+        this.hypernyms = hypernyms;
+    }
+
+    /**
+     * Adds a hypernym to the current list.
+     * @param hypernym
+     * @return as specified by List.add()
+     */
+    public boolean addHypernym(String hypernym) {
+        return this.hypernyms.add(hypernym);
     }
 }
