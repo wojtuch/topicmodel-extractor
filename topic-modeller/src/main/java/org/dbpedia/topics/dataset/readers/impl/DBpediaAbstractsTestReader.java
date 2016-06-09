@@ -44,7 +44,7 @@ public class DBpediaAbstractsTestReader implements Reader {
             Pattern pattern = Pattern.compile(PARSE_TRIPLE_REGEX);
             Files.lines(Paths.get(abstractsTtlFile))
                     .filter(line -> !line.startsWith("#"))
-                    .skip(numAbstractsToRead)
+                    .limit(numAbstractsToRead)
                     .forEach(line -> {
                         Matcher m = pattern.matcher(line);
                         if (m.find()) {
@@ -54,6 +54,7 @@ public class DBpediaAbstractsTestReader implements Reader {
                             document.setUri(uri);
                             document.setText(text);
                             dataset.addDocument(document);
+                            System.out.println(uri + ": " + text);
                         }
                     });
         } catch (IOException e) {

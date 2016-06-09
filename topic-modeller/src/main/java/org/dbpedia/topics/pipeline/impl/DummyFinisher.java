@@ -1,6 +1,7 @@
 package org.dbpedia.topics.pipeline.impl;
 
 import org.dbpedia.topics.dataset.models.Dataset;
+import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.pipeline.PipelineFinisher;
 
 /**
@@ -9,6 +10,11 @@ import org.dbpedia.topics.pipeline.PipelineFinisher;
 public class DummyFinisher implements PipelineFinisher {
     @Override
     public void finishPipeline(Dataset dataset) {
-
+        for (Instance instance : dataset) {
+            System.out.println(instance.getUri());
+            instance.getSpotlightAnnotation().getResources().forEach(resource -> {
+                System.out.println(resource.getUri());
+            });
+        }
     }
 }
