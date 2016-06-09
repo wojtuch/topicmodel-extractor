@@ -9,11 +9,11 @@ import org.dbpedia.utils.annotation.models.SpotlightAnnotation;
 /**
  * Created by wlu on 09.06.16.
  */
-public class TaskAnnotate implements PipelineTask {
+public class AnnotateTask implements PipelineTask {
 
     private SpotlightAnnotator spotlightAnnotator;
 
-    public TaskAnnotate(String spotlightEndpoint) {
+    public AnnotateTask(String spotlightEndpoint) {
         spotlightAnnotator = new SpotlightAnnotator(spotlightEndpoint);
     }
 

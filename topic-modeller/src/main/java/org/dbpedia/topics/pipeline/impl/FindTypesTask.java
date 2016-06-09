@@ -13,12 +13,12 @@ import java.util.Map;
 /**
  * Created by wlu on 09.06.16.
  */
-public class TaskFindCategories implements PipelineTask {
+public class FindTypesTask implements PipelineTask {
 
     private SparqlConnector sparqlConnector;
     private Map<String, List<String>> cache = new HashMap<>();
 
-    public TaskFindCategories(String sparqlEndpoint) throws URISyntaxException {
+    public FindTypesTask(String sparqlEndpoint) throws URISyntaxException {
         sparqlConnector = new SparqlConnector(sparqlEndpoint);
     }
 
@@ -39,9 +39,9 @@ public class TaskFindCategories implements PipelineTask {
 
             instance.getSpotlightAnnotation().getResources().forEach(resource -> {
                 if (!cache.containsKey(resource.getUri())) {
-                    cache.put(resource.getUri(), sparqlConnector.getCategories(resource.getUri()));
+                    cache.put(resource.getUri(), sparqlConnector.getTypes(resource.getUri()));
                 }
-                resource.setDctSubjects(cache.get(resource.getUri()));
+                resource.setRdfTypes(cache.get(resource.getUri()));
             });
         }
 
