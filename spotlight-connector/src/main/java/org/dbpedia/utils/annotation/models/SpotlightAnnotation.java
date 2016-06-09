@@ -69,4 +69,8 @@ public class SpotlightAnnotation implements Serializable {
     public void addResource(SpotlightResource resource) {
         this.resources.add(resource);
     }
+
+    public boolean isEmpty() {
+        return policy == null;
+    }
 }

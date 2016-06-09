@@ -16,6 +16,7 @@ import org.dbpedia.utils.annotation.models.SpotlightAnnotation;
 import org.dbpedia.utils.annotation.models.SpotlightResource;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -31,7 +32,7 @@ public class SpotlightAnnotator {
         this.endpointUrl = endpointUrl;
     }
 
-    public SpotlightAnnotation annotate(String text, int supportThreshold, double confidenceThreshold) throws IOException {
+    public SpotlightAnnotation annotate(String text, int supportThreshold, double confidenceThreshold){
         HttpClient client = HttpClientBuilder.create().build();
         HttpPost post = new HttpPost(endpointUrl);
 
@@ -40,16 +41,21 @@ public class SpotlightAnnotator {
         nameValuePairs.add(new BasicNameValuePair("support", String.valueOf(supportThreshold)));
         nameValuePairs.add(new BasicNameValuePair("confidence", String.valueOf(confidenceThreshold)));
 
-        post.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
+        try {
+            post.setEntity(new UrlEncodedFormEntity(nameValuePairs, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         post.setHeader("Accept", "application/json");
         post.setHeader("Content-type", "application/x-www-form-urlencoded; charset=UTF-8");
 
+        SpotlightAnnotation result = new SpotlightAnnotation();
         HttpResponse response;
         try {
             response = client.execute(post);
         } catch (IOException e) {
             //TODO: log the exception
-            throw e;
+            return result;
         }
 
         String jsonText;
@@ -57,7 +63,7 @@ public class SpotlightAnnotator {
             jsonText = IOUtils.toString(response.getEntity().getContent(), "UTF-8").trim();
         } catch (IOException e) {
             //TODO: log the exception
-            throw e;
+            return result;
         }
 
         JSONObject json;
@@ -69,7 +75,6 @@ public class SpotlightAnnotator {
             throw e;
         }
 
-        SpotlightAnnotation result;
         try {
             result = parseJsonResponseObject(json);
         }
