@@ -1,13 +1,14 @@
 package org.dbpedia.topics.dataset.models;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Representation of the document corpus that will be used for topic modelling.
  * Created by wlu on 26.05.16.
  */
-public abstract class Dataset {
+public abstract class Dataset implements Iterable<Instance> {
 
     private List<Instance> documents = new ArrayList<>();
 
@@ -17,5 +18,25 @@ public abstract class Dataset {
 
     public void addDocument(Instance document) {
         documents.add(document);
+    }
+
+    @Override
+    public Iterator<Instance> iterator() {
+        Iterator<Instance> it = new Iterator<Instance>() {
+
+            private int idx = 0;
+
+            @Override
+            public boolean hasNext() {
+                return idx < documents.size();
+            }
+
+            @Override
+            public Instance next() {
+                return documents.get(idx++);
+            }
+        };
+
+        return it;
     }
 }
