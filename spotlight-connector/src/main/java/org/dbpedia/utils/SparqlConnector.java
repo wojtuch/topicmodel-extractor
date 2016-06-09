@@ -24,6 +24,7 @@ import java.util.List;
  * Created by wojtuch on 27/04/16.
  */
 public class SparqlConnector {
+
     private URI endpointUri;
 
     public SparqlConnector(String endpointUri) throws URISyntaxException {
@@ -39,25 +40,30 @@ public class SparqlConnector {
     }
 
     public List<String> getTypes(String resourceUri) throws IOException {
-        return sendOneVarSelect(resourceUri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
+        return selectObject(resourceUri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
     }
 
     public List<String> getCategories(String resourceUri) throws IOException {
-        return sendOneVarSelect(resourceUri, "http://purl.org/dc/terms/subject");
+        return selectObject(resourceUri, "http://purl.org/dc/terms/subject");
     }
 
-    private List<String> sendOneVarSelect(String s, String p) throws IOException {
-        return sendOneVarSelect(s, p, "http://dbpedia.org");
+    public List<String> getHypernyms(String resourceUri) throws IOException {
+        return selectObject(resourceUri, "http://purl.org/linguistics/gold/hypernym", "hypernyms");
     }
 
-    private List<String> sendOneVarSelect(String s, String p, String graphUri) throws IOException {
+    private List<String> selectObject(String s, String p) throws IOException {
+        return selectObject(s, p, Constants.DEFAULT_GRAPH_URI);
+    }
+
+    private List<String> selectObject(String s, String p, String graphUri) throws IOException {
         String varName = "tempVar";
         List<String> result = new ArrayList<>();
 
         List<NameValuePair> nameValuePairs = new ArrayList<>();
 
         nameValuePairs.add(new BasicNameValuePair("default-graph-uri", graphUri));
-        nameValuePairs.add(new BasicNameValuePair("query", "select distinct ?"+varName+" where {<"+s+"> <"+p+"> ?"+varName+"}"));
+        String queryString = String.format("select distinct ?%s where {<%s> <%s> ?%s}", varName, s, p, varName);
+        nameValuePairs.add(new BasicNameValuePair("query", queryString));
         nameValuePairs.add(new BasicNameValuePair("format", "application/sparql-results+json"));
         nameValuePairs.add(new BasicNameValuePair("timeout", "30000"));
 
@@ -87,7 +93,6 @@ public class SparqlConnector {
             throw e;
         }
 
-        boolean testJson = true;
         JSONObject json;
         try
         {
@@ -95,6 +100,7 @@ public class SparqlConnector {
         }
         catch (JSONException e) {
             //TODO: log the exception with the text
+            e.printStackTrace();
             throw e;
         }
 
