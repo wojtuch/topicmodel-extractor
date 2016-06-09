@@ -1,6 +1,5 @@
 package org.dbpedia.topics;
 
-import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsTestReader;
 import org.dbpedia.topics.pipeline.Pipeline;
 import org.dbpedia.topics.pipeline.impl.*;
@@ -14,7 +13,7 @@ public class Main {
 
     public static void main(String[] args) throws URISyntaxException {
 
-        Pipeline pipeline = new Pipeline(new DBpediaAbstractsTestReader("/media/data/datasets/gsoc/long_abstracts_en.ttl", 15), new DummyFinisher());
+        Pipeline pipeline = new Pipeline(new DBpediaAbstractsTestReader("/media/data/datasets/gsoc/long_abstracts_en.ttl", 15), new TestFinisher());
 
         pipeline.addTask(new AnnotateTask(Constants.SPOTLIGHT_ENDPOINT));
         pipeline.addTask(new FindTypesTask(Constants.DBPEDIA_ENDPOINT));

@@ -7,7 +7,7 @@ import org.dbpedia.topics.pipeline.PipelineFinisher;
 /**
  * Created by wlu on 09.06.16.
  */
-public class DummyFinisher implements PipelineFinisher {
+public class TestFinisher implements PipelineFinisher {
     @Override
     public void finishPipeline(Dataset dataset) {
         for (Instance instance : dataset) {
