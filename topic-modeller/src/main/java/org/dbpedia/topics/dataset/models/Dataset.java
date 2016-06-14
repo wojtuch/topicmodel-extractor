@@ -8,7 +8,7 @@ import java.util.List;
  * Representation of the document corpus that will be used for topic modelling.
  * Created by wlu on 26.05.16.
  */
-public abstract class Dataset implements Iterable<Instance> {
+public class Dataset implements Iterable<Instance> {
 
     private List<Instance> documents = new ArrayList<>();
 

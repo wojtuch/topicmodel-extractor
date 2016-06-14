@@ -14,6 +14,7 @@ public class TestFinisher implements PipelineFinisher {
             System.out.print(instance.getUri());
             System.out.println(instance.getLemmas());
             System.out.println(instance.getHypernyms());
+            System.out.println(instance.getText());
         }
     }
 }

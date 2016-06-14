@@ -7,6 +7,7 @@ import org.dbpedia.topics.dataset.models.Dataset;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.models.impl.WikipediaArticle;
+import org.dbpedia.topics.io.MongoWrapper;
 import org.dbpedia.topics.pipeline.PipelineFinisher;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
@@ -15,21 +16,15 @@ import org.mongodb.morphia.Morphia;
  * Created by wlu on 09.06.16.
  */
 public class MongoDBInsertFinisher implements PipelineFinisher {
-    private MongoClient mongoClient;
-    private Morphia morphia;
+    private MongoWrapper mongo;
 
     public MongoDBInsertFinisher(String server, int port) {
-        mongoClient = new MongoClient(server, port);
-        morphia = new Morphia();
+        mongo = new MongoWrapper(server, port);
     }
 
     @Override
     public void finishPipeline(Dataset dataset) {
-        morphia.map(DBpediaAbstract.class);
-        morphia.map(WikipediaArticle.class);
-
-        Datastore datastore = morphia.createDatastore(mongoClient, Constants.MONGO_DB);
-        datastore.ensureIndexes();
+        Datastore datastore = mongo.getDatastore();
 
         for (Instance instance : dataset) {
             try {
@@ -40,6 +35,6 @@ public class MongoDBInsertFinisher implements PipelineFinisher {
             }
         }
 
-        mongoClient.close();
+        mongo.close();
     }
 }
