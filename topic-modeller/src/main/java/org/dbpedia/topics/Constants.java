@@ -14,6 +14,7 @@ public class Constants {
     public static String HYPERNYMS_ENDPOINT;
     public static String MONGO_SERVER;
     public static int MONGO_PORT;
+    public static String MONGO_DB;
     static {
         try {
             Properties properties = new Properties();
@@ -23,6 +24,7 @@ public class Constants {
             HYPERNYMS_ENDPOINT = properties.getProperty("hypernyms_sparql_endpoint");
             MONGO_SERVER = properties.getProperty("mongo_server", "localhost");
             MONGO_PORT = Integer.parseInt(properties.getProperty("mongo_port", "27017"));
+            MONGO_DB = properties.getProperty("mongo_dbname", "gsoc");
         } catch (IOException e) {
             e.printStackTrace();
         }
