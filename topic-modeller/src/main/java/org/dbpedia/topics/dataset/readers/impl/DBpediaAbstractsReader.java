@@ -19,12 +19,24 @@ public class DBpediaAbstractsReader implements Reader {
     private static final String PARSE_TRIPLE_REGEX = "<(.*?)>\\s*<http://dbpedia.org/ontology/abstract>\\s*\"(.*?)\"@en.*\\.";
 
     private String abstractsTtlFile;
+    private long numAbstractsToRead;
+
     /**
      * Constructs a Reader that reads a file with DBpedia abstracts in a turtle format.
      * @param abstractsTtlFile
      */
     public DBpediaAbstractsReader(String abstractsTtlFile) {
+        this(abstractsTtlFile, Long.MAX_VALUE);
+    }
+
+    /**
+     * Constructs a Reader that reads specified number of abstracts from a file with DBpedia abstracts in a turtle format.
+     * @param abstractsTtlFile
+     * @param numAbstractsToRead
+     */
+    public DBpediaAbstractsReader(String abstractsTtlFile, long numAbstractsToRead) {
         this.abstractsTtlFile = abstractsTtlFile;
+        this.numAbstractsToRead = numAbstractsToRead;
     }
 
     /*
@@ -41,6 +53,7 @@ public class DBpediaAbstractsReader implements Reader {
             Pattern pattern = Pattern.compile(PARSE_TRIPLE_REGEX);
             Files.lines(Paths.get(abstractsTtlFile))
                     .filter(line -> !line.startsWith("#"))
+                    .limit(numAbstractsToRead)
                     .forEach(line -> {
                         Matcher m = pattern.matcher(line);
                         if (m.find()) {
