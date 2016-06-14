@@ -15,6 +15,7 @@ public abstract class Instance {
     protected String uri;
     protected SpotlightAnnotation spotlightAnnotation;
     protected List<String> hypernyms = new ArrayList<>();
+    protected List<String> lemmas = new ArrayList<>();
 
     /**
      * Returns the URI of this document.
@@ -89,5 +90,21 @@ public abstract class Instance {
      */
     public boolean addHypernym(String hypernym) {
         return this.hypernyms.add(hypernym);
+    }
+
+    /**
+     * Gets the lemmas of the text of this document.
+     * @return
+     */
+    public List<String> getLemmas() {
+        return lemmas;
+    }
+
+    /**
+     * Sets the lemmas of the text of this document.
+     * @return
+     */
+    public void setLemmas(List<String> lemmas) {
+        this.lemmas = lemmas;
     }
 }
