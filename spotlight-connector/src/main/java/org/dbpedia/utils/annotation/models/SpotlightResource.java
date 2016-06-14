@@ -1,5 +1,8 @@
 package org.dbpedia.utils.annotation.models;
 
+import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Property;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,16 +10,26 @@ import java.util.List;
 /**
  * Created by wojtuch on 30/04/16.
  */
+@Embedded
 public class SpotlightResource implements Serializable {
+    @Property
     private String uri;
+    @Property
     private int support;
+    @Property
     private String typesString;
+    @Property
     private String surfaceForm;
+    @Property
     private int offset;
+    @Property
     private double similarityScore;
+    @Property
     private float percentageOfSecondRank;
 
+    @Property
     private List<String> rdfTypes = new ArrayList<>();
+    @Property
     private List<String> dctSubjects = new ArrayList<>();
 
     public SpotlightResource() {

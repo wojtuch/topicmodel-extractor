@@ -1,5 +1,9 @@
 package org.dbpedia.utils.annotation.models;
 
+import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Property;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,11 +11,17 @@ import java.util.List;
 /**
  * Created by wojtuch on 30/04/16.
  */
+@Embedded
 public class SpotlightAnnotation implements Serializable {
+    @Property
     private double confidence;
+    @Property
     private int support;
+    @Property
     private String types;
+    @Property
     private String sparql;
+    @Property
     private String policy;
     private List<SpotlightResource> resources = new ArrayList<>();
 

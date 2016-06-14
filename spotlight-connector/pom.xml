@@ -47,5 +47,12 @@
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
         </dependency>
+
+        <!-- http://mvnrepository.com/artifact/org.mongodb.morphia/morphia -->
+        <dependency>
+            <groupId>org.mongodb.morphia</groupId>
+            <artifactId>morphia</artifactId>
+            <version>1.2.0</version>
+        </dependency>
     </dependencies>
 </project>
