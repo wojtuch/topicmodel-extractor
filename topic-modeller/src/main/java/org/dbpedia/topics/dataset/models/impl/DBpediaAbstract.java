@@ -6,7 +6,7 @@ import org.mongodb.morphia.annotations.Entity;
 /**
  * Created by wlu on 26.05.16.
  */
-@Entity("abstracts")
+@Entity(value = "abstracts", noClassnameStored = true)
 public class DBpediaAbstract extends Instance {
     public DBpediaAbstract() {
     }

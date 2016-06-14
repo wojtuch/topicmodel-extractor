@@ -1,7 +1,10 @@
 package org.dbpedia.topics.dataset.models;
 
+import org.bson.types.ObjectId;
 import org.dbpedia.utils.annotation.models.SpotlightAnnotation;
 import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Indexed;
 import org.mongodb.morphia.annotations.Property;
 
 import java.util.ArrayList;
@@ -14,8 +17,10 @@ import java.util.List;
 public abstract class Instance {
     @Property
     protected String text;
-    @Property
+    @Indexed(unique = true)
     protected String uri;
+    @Id
+    private ObjectId id;
     @Embedded
     protected SpotlightAnnotation spotlightAnnotation;
     @Property
