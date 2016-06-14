@@ -11,10 +11,9 @@ public class TestFinisher implements PipelineFinisher {
     @Override
     public void finishPipeline(Dataset dataset) {
         for (Instance instance : dataset) {
-            System.out.println(instance.getUri());
-            instance.getSpotlightAnnotation().getResources().forEach(resource -> {
-                System.out.println(resource.getUri());
-            });
+            System.out.print(instance.getUri());
+            System.out.println(instance.getLemmas());
+            System.out.println(instance.getHypernyms());
         }
     }
 }

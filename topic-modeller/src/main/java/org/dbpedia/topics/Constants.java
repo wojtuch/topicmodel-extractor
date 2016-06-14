@@ -12,6 +12,8 @@ public class Constants {
     public static String SPOTLIGHT_ENDPOINT;
     public static String DBPEDIA_ENDPOINT;
     public static String HYPERNYMS_ENDPOINT;
+    public static String MONGO_SERVER;
+    public static int MONGO_PORT;
     static {
         try {
             Properties properties = new Properties();
@@ -19,6 +21,8 @@ public class Constants {
             SPOTLIGHT_ENDPOINT = properties.getProperty("spotlight_endpoint", "http://spotlight.sztaki.hu:2222/rest/annotate");
             DBPEDIA_ENDPOINT = properties.getProperty("dbpedia_sparql_endpoint", "http://dbpedia.org/sparql");
             HYPERNYMS_ENDPOINT = properties.getProperty("hypernyms_sparql_endpoint");
+            MONGO_SERVER = properties.getProperty("mongo_server", "localhost");
+            MONGO_PORT = Integer.parseInt(properties.getProperty("mongo_port", "27017"));
         } catch (IOException e) {
             e.printStackTrace();
         }

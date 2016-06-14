@@ -1,6 +1,8 @@
 package org.dbpedia.topics.dataset.models;
 
 import org.dbpedia.utils.annotation.models.SpotlightAnnotation;
+import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Property;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,12 +12,19 @@ import java.util.List;
  * Created by wlu on 26.05.16.
  */
 public abstract class Instance {
-
+    @Property
     protected String text;
+    @Property
     protected String uri;
+    @Embedded
     protected SpotlightAnnotation spotlightAnnotation;
+    @Property
     protected List<String> hypernyms = new ArrayList<>();
+    @Property
     protected List<String> lemmas = new ArrayList<>();
+
+    public Instance() {
+    }
 
     /**
      * Returns the URI of this document.
