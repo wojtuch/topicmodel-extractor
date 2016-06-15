@@ -19,24 +19,36 @@ public class DBpediaAbstractsReader extends Reader {
     private static final String PARSE_TRIPLE_REGEX = "<(.*?)>\\s*<http://dbpedia.org/ontology/abstract>\\s*\"(.*?)\"@en.*\\.";
 
     private String abstractsTtlFile;
-    private long numAbstractsToRead;
+    private long start;
+    private long end;
 
     /**
      * Constructs a Reader that reads a file with DBpedia abstracts in a turtle format.
      * @param abstractsTtlFile
      */
     public DBpediaAbstractsReader(String abstractsTtlFile) {
-        this(abstractsTtlFile, Long.MAX_VALUE);
+        this(abstractsTtlFile, 0, Long.MAX_VALUE);
     }
 
     /**
      * Constructs a Reader that reads specified number of abstracts from a file with DBpedia abstracts in a turtle format.
      * @param abstractsTtlFile
-     * @param numAbstractsToRead
+     * @param end
      */
-    public DBpediaAbstractsReader(String abstractsTtlFile, long numAbstractsToRead) {
+    public DBpediaAbstractsReader(String abstractsTtlFile, long end) {
+        this(abstractsTtlFile, 0, end);
+    }
+
+    /**
+     * Constructs a Reader that reads specified number of abstracts from a file with DBpedia abstracts in a turtle format.
+     * @param abstractsTtlFile
+     * @param start
+     * @param end
+     */
+    public DBpediaAbstractsReader(String abstractsTtlFile, long start, long end) {
         this.abstractsTtlFile = abstractsTtlFile;
-        this.numAbstractsToRead = numAbstractsToRead;
+        this.start = start;
+        this.end = end;
     }
 
     /*
@@ -52,7 +64,8 @@ public class DBpediaAbstractsReader extends Reader {
             Pattern pattern = Pattern.compile(PARSE_TRIPLE_REGEX);
             Files.lines(Paths.get(abstractsTtlFile))
                     .filter(line -> !line.startsWith("#"))
-                    .limit(numAbstractsToRead)
+                    .skip(start)
+                    .limit(end-start)
                     .forEach(line -> {
                         Matcher m = pattern.matcher(line);
                         if (m.find()) {
