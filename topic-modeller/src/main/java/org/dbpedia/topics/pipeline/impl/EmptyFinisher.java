@@ -7,7 +7,11 @@ import org.dbpedia.topics.pipeline.PipelineFinisher;
 /**
  * Created by wlu on 09.06.16.
  */
-public class EmptyFinisher implements PipelineFinisher {
+public class EmptyFinisher extends PipelineFinisher {
+
     @Override
-    public void finishPipeline(Dataset dataset) {}
+    public void finishInstance(Instance instance) { }
+
+    @Override
+    public void close() {}
 }

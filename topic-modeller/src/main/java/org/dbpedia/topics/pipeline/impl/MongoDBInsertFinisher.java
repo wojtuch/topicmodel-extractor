@@ -15,26 +15,31 @@ import org.mongodb.morphia.Morphia;
 /**
  * Created by wlu on 09.06.16.
  */
-public class MongoDBInsertFinisher implements PipelineFinisher {
+public class MongoDBInsertFinisher extends PipelineFinisher {
     private MongoWrapper mongo;
+    private Datastore datastore;
 
     public MongoDBInsertFinisher(String server, int port) {
         mongo = new MongoWrapper(server, port);
+        datastore = mongo.getDatastore();
     }
 
     @Override
-    public void finishPipeline(Dataset dataset) {
-        Datastore datastore = mongo.getDatastore();
-
-        for (Instance instance : dataset) {
-            try {
-                datastore.save(instance);
-            }
-            catch (DuplicateKeyException e) {
-                System.out.println("Duplicate entry: " + instance.getUri());
-            }
+    public void finishInstance(Instance instance) {
+        try {
+            datastore.save(instance);
         }
+        catch (DuplicateKeyException e) {
+            System.out.println("Duplicate entry: " + instance.getUri());
+        }
+    }
 
+    @Override
+    public void close() {
         mongo.close();
+    }
+
+    public boolean recordAlreadyExists(Instance instance) {
+        return mongo.recordExists(instance.getClass(), instance.getUri());
     }
 }

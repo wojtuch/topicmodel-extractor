@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Created by wlu on 09.06.16.
  */
-public class FindCategoriesTask implements PipelineTask {
+public class FindCategoriesTask extends PipelineTask {
 
     private SparqlConnector sparqlConnector;
     private Map<String, List<String>> cache = new HashMap<>();
@@ -23,28 +23,22 @@ public class FindCategoriesTask implements PipelineTask {
     }
 
     @Override
-    public Dataset start(Dataset dataset) {
-
-        for (Instance instance : dataset) {
-
-            if (instance.getSpotlightAnnotation() == null) {
-                System.err.println("Document not annotated....");
-                continue;
-            }
-
-            if (instance.getSpotlightAnnotation().isEmpty()) {
-                System.err.println("Annotation empty....");
-                continue;
-            }
-
-            instance.getSpotlightAnnotation().getResources().forEach(resource -> {
-                if (!cache.containsKey(resource.getUri())) {
-                    cache.put(resource.getUri(), sparqlConnector.getCategories(resource.getUri()));
-                }
-                resource.setDctSubjects(cache.get(resource.getUri()));
-            });
+    public void processInstance(Instance instance) {
+        if (instance.getSpotlightAnnotation() == null) {
+            System.err.println("Document not annotated....");
+            return;
         }
 
-        return dataset;
+        if (instance.getSpotlightAnnotation().isEmpty()) {
+            System.err.println("Annotation empty....");
+            return;
+        }
+
+        instance.getSpotlightAnnotation().getResources().forEach(resource -> {
+            if (!cache.containsKey(resource.getUri())) {
+                cache.put(resource.getUri(), sparqlConnector.getCategories(resource.getUri()));
+            }
+            resource.setDctSubjects(cache.get(resource.getUri()));
+        });
     }
 }

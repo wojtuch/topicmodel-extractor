@@ -1,7 +1,9 @@
 package org.dbpedia.topics.pipeline;
 
 import org.dbpedia.topics.dataset.models.Dataset;
+import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.dataset.readers.Reader;
+import org.dbpedia.topics.pipeline.impl.MongoDBInsertFinisher;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +41,40 @@ public class Pipeline {
      */
     public void doWork() {
         Dataset dataset = datasetReader.readDataset();
+        int ct = 0;
+
+        System.out.println(pipelineFinisher instanceof MongoDBInsertFinisher);
+
+        for (Instance instance : dataset) {
+            if (++ct % 500 == 0) {
+                System.out.println(ct);
+            }
+
+            // skip the pipeline if the instance is present in the database
+            if (pipelineFinisher instanceof MongoDBInsertFinisher) {
+                MongoDBInsertFinisher casted = (MongoDBInsertFinisher) pipelineFinisher;
+                if (casted.recordAlreadyExists(instance)) {
+                    System.out.println(instance.getUri() + " already present in the database. Skipping.");
+                    continue;
+                }
+            }
+
+            for (PipelineTask pipelineTask : pipelineTasks) {
+                pipelineTask.processInstance(instance);
+            }
+            pipelineFinisher.finishInstance(instance);
+        }
+
+    }
+    /**
+     * Reads the dataset, passes it for sequential processing by the tasks and finishes the pipeline.
+     * Eventually, the finisher
+     */
+    public void doWorkBulk() {
+        Dataset dataset = datasetReader.readDataset();
 
         for (PipelineTask pipelineTask : pipelineTasks) {
+            System.out.println(pipelineTask.getClass());
             dataset = pipelineTask.start(dataset);
         }
 

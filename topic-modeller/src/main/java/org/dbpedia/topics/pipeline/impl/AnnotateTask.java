@@ -9,7 +9,7 @@ import org.dbpedia.utils.annotation.models.SpotlightAnnotation;
 /**
  * Created by wlu on 09.06.16.
  */
-public class AnnotateTask implements PipelineTask {
+public class AnnotateTask extends PipelineTask {
 
     private SpotlightAnnotator spotlightAnnotator;
 
@@ -18,13 +18,16 @@ public class AnnotateTask implements PipelineTask {
     }
 
     @Override
-    public Dataset start(Dataset dataset) {
-
-        for (Instance instance : dataset) {
-            SpotlightAnnotation annotation = spotlightAnnotator.annotate(instance.getText(), 0, 0.5);
+    public void processInstance(Instance instance) {
+        SpotlightAnnotation annotation;
+        try {
+            annotation = spotlightAnnotator.annotate(instance.getText(), 0, 0.5);
             instance.setSpotlightAnnotation(annotation);
         }
-
-        return dataset;
+        catch (Exception e) {
+            System.err.println("Error when annotating: " + instance.getUri());
+            System.err.println(instance.getText());
+            e.printStackTrace();
+        }
     }
 }

@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * Created by wlu on 09.06.16.
  */
-public class FindHypernymsTask implements PipelineTask {
+public class FindHypernymsTask extends PipelineTask {
 
     private SparqlConnector sparqlConnector;
     private Map<String, List<String>> cache = new HashMap<>();
@@ -24,31 +24,25 @@ public class FindHypernymsTask implements PipelineTask {
     }
 
     @Override
-    public Dataset start(Dataset dataset) {
-
-        for (Instance instance : dataset) {
-
-            if (instance.getSpotlightAnnotation() == null) {
-                System.err.println("Document not annotated....");
-                continue;
-            }
-
-            if (instance.getSpotlightAnnotation().isEmpty()) {
-                System.err.println("Annotation empty....");
-                continue;
-            }
-
-            List<String> hypernyms = new ArrayList<>();
-
-            instance.getSpotlightAnnotation().getResources().forEach(res -> {
-                if (!cache.containsKey(res.getUri())) {
-                    cache.put(res.getUri(), sparqlConnector.getHypernyms(res.getUri()));
-                }
-                hypernyms.addAll(cache.get(res.getUri()));
-            });
-            instance.setHypernyms(hypernyms);
+    public void processInstance(Instance instance) {
+        if (instance.getSpotlightAnnotation() == null) {
+            System.err.println("Document not annotated....");
+            return;
         }
 
-        return dataset;
+        if (instance.getSpotlightAnnotation().isEmpty()) {
+            System.err.println("Annotation empty....");
+            return;
+        }
+
+        List<String> hypernyms = new ArrayList<>();
+
+        instance.getSpotlightAnnotation().getResources().forEach(res -> {
+            if (!cache.containsKey(res.getUri())) {
+                cache.put(res.getUri(), sparqlConnector.getHypernyms(res.getUri()));
+            }
+            hypernyms.addAll(cache.get(res.getUri()));
+        });
+        instance.setHypernyms(hypernyms);
     }
 }

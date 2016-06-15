@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 /**
  * Created by wlu on 09.06.16.
  */
-public class FindLemmasTask implements PipelineTask {
+public class FindLemmasTask extends PipelineTask {
 
     private StanfordLemmatizer lemmatizer;
 
@@ -22,11 +22,10 @@ public class FindLemmasTask implements PipelineTask {
     }
 
     @Override
-    public Dataset start(Dataset dataset) {
-        for (Instance instance : dataset) {
-            List<String> lemmas = lemmatizer.lemmatize(instance.getText());
-            List<String> stopWords = Arrays.asList(StopWords.STOPWORDS);
-            lemmas = lemmas.parallelStream()
+    public void processInstance(Instance instance) {
+        List<String> lemmas = lemmatizer.lemmatize(instance.getText());
+        List<String> stopWords = Arrays.asList(StopWords.STOPWORDS);
+        lemmas = lemmas.parallelStream()
                 .filter(lemma -> {
                     boolean result = true;
                     //remove stop words
@@ -36,8 +35,6 @@ public class FindLemmasTask implements PipelineTask {
                     return result;
                 })
                 .collect(Collectors.toList());
-            instance.setLemmas(lemmas);
-        }
-        return dataset;
+        instance.setLemmas(lemmas);
     }
 }
