@@ -29,4 +29,16 @@ public class Constants {
             e.printStackTrace();
         }
     }
+
+
+    public static final String FEATURE_DESCRIPTOR_WORDS = "w";
+    public static final String FEATURE_DESCRIPTOR_ENTITIES = "e";
+    public static final String FEATURE_DESCRIPTOR_TYPES = "t";
+    public static final String FEATURE_DESCRIPTOR_CATEGORIES = "c";
+    public static final String FEATURE_DESCRIPTOR_HYPERNYMS = "h";
+
+    public static final String FEATURE_PREFIX_ENTITIES = "E:";
+    public static final String FEATURE_PREFIX_TYPES = "rdfT:";
+    public static final String FEATURE_PREFIX_CATEGORIES = "dcS:";
+    public static final String FEATURE_PREFIX_HYPERNYMS = "H:";
 }

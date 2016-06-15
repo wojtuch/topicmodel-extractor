@@ -20,6 +20,14 @@ public class Dataset implements Iterable<Instance> {
         documents.add(document);
     }
 
+    public Instance getDocument(int index) {
+        return documents.get(index);
+    }
+
+    public int size() {
+        return documents.size();
+    }
+
     @Override
     public Iterator<Instance> iterator() {
         Iterator<Instance> it = new Iterator<Instance>() {
