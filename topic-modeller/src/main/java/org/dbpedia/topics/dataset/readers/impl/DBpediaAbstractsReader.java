@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 /**
  * Created by wlu on 29.05.16.
  */
-public class DBpediaAbstractsReader implements Reader {
+public class DBpediaAbstractsReader extends Reader {
 
     private static final String PARSE_TRIPLE_REGEX = "<(.*?)>\\s*<http://dbpedia.org/ontology/abstract>\\s*\"(.*?)\"@en.*\\.";
 
@@ -47,7 +47,6 @@ public class DBpediaAbstractsReader implements Reader {
      */
     @Override
     public Dataset readDataset() {
-
         Dataset dataset = new DBpediaAbstractsDataset();
         try {
             Pattern pattern = Pattern.compile(PARSE_TRIPLE_REGEX);

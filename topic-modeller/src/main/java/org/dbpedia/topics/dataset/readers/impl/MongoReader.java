@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Created by wlu on 29.05.16.
  */
-public class MongoReader<T extends Instance> implements Reader {
+public class MongoReader<T extends Instance> extends Reader {
     private Class<T> clazz;
     private MongoWrapper mongo;
 
@@ -22,14 +22,16 @@ public class MongoReader<T extends Instance> implements Reader {
 
     @Override
     public Dataset readDataset() {
-        Datastore datastore = mongo.getDatastore();
-
         Dataset dataset = new Dataset();
 
-        List<T> result = datastore.createQuery(clazz).asList();
-        result.forEach(r -> dataset.addDocument(r));
-        mongo.close();
+        List<T> records = mongo.getAllRecords(clazz);
+        records.forEach(record -> dataset.addDocument(record));
 
         return dataset;
+    }
+
+    @Override
+    public void close(){
+        mongo.close();
     }
 }

@@ -7,7 +7,7 @@ import org.dbpedia.topics.dataset.readers.Reader;
 /**
  * Created by wlu on 29.05.16.
  */
-public class WikipediaDumpReader implements Reader {
+public class WikipediaDumpReader extends Reader {
 
     @Override
     public Dataset readDataset() {
