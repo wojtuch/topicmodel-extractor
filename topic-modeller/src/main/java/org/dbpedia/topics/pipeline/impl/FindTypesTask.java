@@ -1,6 +1,5 @@
 package org.dbpedia.topics.pipeline.impl;
 
-import org.dbpedia.topics.dataset.models.Dataset;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.pipeline.PipelineTask;
 import org.dbpedia.utils.SparqlConnector;
@@ -16,7 +15,7 @@ import java.util.Map;
 public class FindTypesTask extends PipelineTask {
 
     private SparqlConnector sparqlConnector;
-    private Map<String, List<String>> cache = new HashMap<>();
+    private static Map<String, List<String>> cache = new HashMap<>();
 
     public FindTypesTask(String sparqlEndpoint) throws URISyntaxException {
         sparqlConnector = new SparqlConnector(sparqlEndpoint);
@@ -35,10 +34,16 @@ public class FindTypesTask extends PipelineTask {
         }
 
         instance.getSpotlightAnnotation().getResources().forEach(resource -> {
-            if (!cache.containsKey(resource.getUri())) {
-                cache.put(resource.getUri(), sparqlConnector.getTypes(resource.getUri()));
+            try {
+                if (!cache.containsKey(resource.getUri())) {
+                    cache.put(resource.getUri(), sparqlConnector.getTypes(resource.getUri()));
+                }
+                resource.setRdfTypes(cache.get(resource.getUri()));
             }
-            resource.setRdfTypes(cache.get(resource.getUri()));
+            catch (Exception e) {
+                e.printStackTrace();
+                System.err.println("Couldn't query for types " + resource.getUri());
+            }
         });
     }
 }

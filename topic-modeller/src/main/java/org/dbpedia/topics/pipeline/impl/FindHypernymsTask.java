@@ -1,6 +1,5 @@
 package org.dbpedia.topics.pipeline.impl;
 
-import org.dbpedia.topics.dataset.models.Dataset;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.pipeline.PipelineTask;
 import org.dbpedia.utils.SparqlConnector;
@@ -17,7 +16,7 @@ import java.util.Map;
 public class FindHypernymsTask extends PipelineTask {
 
     private SparqlConnector sparqlConnector;
-    private Map<String, List<String>> cache = new HashMap<>();
+    private static Map<String, List<String>> cache = new HashMap<>();
 
     public FindHypernymsTask(String sparqlEndpoint) throws URISyntaxException {
         sparqlConnector = new SparqlConnector(sparqlEndpoint);

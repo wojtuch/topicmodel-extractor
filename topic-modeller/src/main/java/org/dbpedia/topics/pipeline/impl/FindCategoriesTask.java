@@ -1,6 +1,5 @@
 package org.dbpedia.topics.pipeline.impl;
 
-import org.dbpedia.topics.dataset.models.Dataset;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.pipeline.PipelineTask;
 import org.dbpedia.utils.SparqlConnector;
@@ -16,7 +15,7 @@ import java.util.Map;
 public class FindCategoriesTask extends PipelineTask {
 
     private SparqlConnector sparqlConnector;
-    private Map<String, List<String>> cache = new HashMap<>();
+    private static Map<String, List<String>> cache = new HashMap<>();
 
     public FindCategoriesTask(String sparqlEndpoint) throws URISyntaxException {
         sparqlConnector = new SparqlConnector(sparqlEndpoint);
@@ -35,10 +34,16 @@ public class FindCategoriesTask extends PipelineTask {
         }
 
         instance.getSpotlightAnnotation().getResources().forEach(resource -> {
-            if (!cache.containsKey(resource.getUri())) {
-                cache.put(resource.getUri(), sparqlConnector.getCategories(resource.getUri()));
+            try {
+                if (!cache.containsKey(resource.getUri())) {
+                    cache.put(resource.getUri(), sparqlConnector.getCategories(resource.getUri()));
+                }
+                resource.setDctSubjects(cache.get(resource.getUri()));
             }
-            resource.setDctSubjects(cache.get(resource.getUri()));
+            catch (Exception e) {
+                e.printStackTrace();
+                System.err.println("Couldn't query for categories " + resource.getUri());
+            }
         });
     }
 }

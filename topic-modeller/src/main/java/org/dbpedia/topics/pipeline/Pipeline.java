@@ -43,8 +43,6 @@ public class Pipeline {
         Dataset dataset = datasetReader.readDataset();
         int ct = 0;
 
-        System.out.println(pipelineFinisher instanceof MongoDBInsertFinisher);
-
         for (Instance instance : dataset) {
             if (++ct % 500 == 0) {
                 System.out.println(ct);

@@ -1,9 +1,6 @@
 package org.dbpedia.topics.pipeline;
 
-import org.dbpedia.topics.Constants;
 import org.dbpedia.topics.dataset.readers.Reader;
-import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
-import org.dbpedia.topics.pipeline.impl.MongoDBInsertFinisher;
 
 /**
  * Created by wlu on 15.06.16.
@@ -21,8 +18,13 @@ public class PipelineThread implements Runnable {
 
     @Override
     public void run() {
-        pipeline.doWork();
-        finisher.close();
-        reader.close();
+        System.out.println("Hello from thread " + Thread.currentThread());
+        try {
+            pipeline.doWork();
+        }
+        finally {
+            finisher.close();
+            reader.close();
+        }
     }
 }

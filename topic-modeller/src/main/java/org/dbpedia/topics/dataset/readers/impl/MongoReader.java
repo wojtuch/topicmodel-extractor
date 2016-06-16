@@ -4,7 +4,6 @@ import org.dbpedia.topics.dataset.models.Dataset;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.io.MongoWrapper;
-import org.mongodb.morphia.Datastore;
 
 import java.util.List;
 

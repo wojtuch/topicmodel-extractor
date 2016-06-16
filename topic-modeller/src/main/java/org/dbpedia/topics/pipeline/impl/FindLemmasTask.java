@@ -1,9 +1,8 @@
 package org.dbpedia.topics.pipeline.impl;
 
+import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.io.StanfordLemmatizer;
 import org.dbpedia.topics.io.StopWords;
-import org.dbpedia.topics.dataset.models.Dataset;
-import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.pipeline.PipelineTask;
 
 import java.util.Arrays;
