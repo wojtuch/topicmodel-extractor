@@ -1,15 +1,16 @@
 package org.dbpedia.topics;
 
-import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
+import org.apache.commons.cli.ParseException;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
-import org.dbpedia.topics.dataset.readers.impl.MongoReader;
 import org.dbpedia.topics.pipeline.Pipeline;
 import org.dbpedia.topics.pipeline.PipelineFinisher;
 import org.dbpedia.topics.pipeline.PipelineThread;
 import org.dbpedia.topics.pipeline.impl.*;
 
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by wlu on 26.05.16.
@@ -17,28 +18,101 @@ import java.net.URISyntaxException;
 public class Main {
 
     public static void main(String[] args) throws URISyntaxException {
+        CmdLineOpts opts = new CmdLineOpts();
 
-//        Reader reader = new MongoReader(DBpediaAbstract.class, Constants.MONGO_SERVER, Constants.MONGO_PORT);
-//        PipelineFinisher finisher = new TestFinisher();
+        try {
+            opts.parse(args);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            opts.printHelp();
+            return;
+        }
 
-        Reader reader = new DBpediaAbstractsReader("/media/data/datasets/gsoc/long_abstracts_en.ttl");
-        PipelineFinisher finisher = new MongoDBInsertFinisher(Constants.MONGO_SERVER, Constants.MONGO_PORT);
+        if (opts.isHelp()) {
+            opts.printHelp();
+            return;
+        }
+
+        if (opts.hasOption(CmdLineOpts.PREPROCESSING_PIPELINE)) {
+            if (opts.hasOption(CmdLineOpts.READER) &&
+                    opts.hasOption(CmdLineOpts.TASKS) &&
+                    opts.hasOption(CmdLineOpts.FINISHER)) {
+                System.out.println("Starting pipeline");
+                startPipeline(opts);
+            }
+            else {
+                opts.printHelp();
+            }
+        }
+
+    }
+
+    private static void startPipeline(CmdLineOpts opts) throws URISyntaxException {
+        Reader reader;
+        PipelineFinisher finisher;
+
+        String finisherStr = opts.getOptionValue(CmdLineOpts.FINISHER);
+        if (finisherStr.equals("mongo")) {
+            System.out.println("mongo");
+            finisher = new MongoDBInsertFinisher(Config.MONGO_SERVER, Config.MONGO_PORT);
+        }
+        else {
+            throw new IllegalArgumentException("Unknown finisher: " + finisherStr);
+        }
+
+        String readerStr = opts.getOptionValue(CmdLineOpts.READER);
+        if (readerStr.equals("abstracts")) {
+            System.out.println("abstracts");
+            reader = new DBpediaAbstractsReader(Config.ABSTRACTS_TRIPLE_FILE);
+        }
+        else {
+            throw new IllegalArgumentException("Unknown finisher: " + finisherStr);
+        }
 
         Pipeline pipeline = new Pipeline(reader, finisher);
 
-        pipeline.addTask(new FindLemmasTask());
-        pipeline.addTask(new AnnotateTask(Constants.SPOTLIGHT_ENDPOINT));
-        pipeline.addTask(new FindTypesTask(Constants.DBPEDIA_ENDPOINT));
-        pipeline.addTask(new FindCategoriesTask(Constants.DBPEDIA_ENDPOINT));
-        pipeline.addTask(new FindHypernymsTask(Constants.HYPERNYMS_ENDPOINT));
+        List<String> tasks = Arrays.asList(opts.getOptionValues(CmdLineOpts.TASKS));
+        System.out.println(tasks);
 
-        pipeline.doWork();
+        if (tasks.contains("lemma")) {
+            pipeline.addTask(new FindLemmasTask());
+        }
+        if (tasks.contains("annotate")) {
+            pipeline.addTask(new AnnotateTask(Config.SPOTLIGHT_ENDPOINT));
+        }
+        if (opts.hasOption(CmdLineOpts.IN_MEMORY)) {
+            if (tasks.contains("types")) {
+                pipeline.addTask(new FindTypesInMemoryTask(Config.TYPES_TRIPLE_FILE));
+            }
+            if (tasks.contains("categories")) {
+                pipeline.addTask(new FindCategoriesInMemoryTask(Config.CATEGORIES_TRIPLE_FILE));
+            }
+            if (tasks.contains("hypernyms")) {
+                pipeline.addTask(new FindHypernymsInMemoryTask(Config.HYPERNYMS_TRIPLE_FILE));
+            }
+        }
+        else {
+            if (tasks.contains("types")) {
+                pipeline.addTask(new FindTypesTask(Config.DBPEDIA_ENDPOINT));
+            }
+            if (tasks.contains("categories")) {
+                pipeline.addTask(new FindCategoriesTask(Config.DBPEDIA_ENDPOINT));
+            }
+            if (tasks.contains("hypernyms")) {
+                pipeline.addTask(new FindHypernymsTask(Config.HYPERNYMS_ENDPOINT));
+            }
+        }
 
-        finisher.close();
-        reader.close();
+//        try {
+//            pipeline.doWork();
+//        }
+//        finally {
+//            finisher.close();
+//            reader.close();
+//        }
     }
 
-    private void multiThreadedPipeline(int numWorkers) throws URISyntaxException {
+    private static void multiThreadedPipeline(int numWorkers) throws URISyntaxException {
         long numLines = Utils.getNumberOfLines("/media/data/datasets/gsoc/long_abstracts_en.ttl");
         long batchSize = numLines/numWorkers;
 
@@ -46,16 +120,15 @@ public class Main {
             long start = batchSize*i;
             long end = i == numWorkers-1 ? numLines : batchSize*(i+1);
 
-
             Reader reader = new DBpediaAbstractsReader("/media/data/datasets/gsoc/long_abstracts_en.ttl", start, end);
-            PipelineFinisher finisher = new MongoDBInsertFinisher(Constants.MONGO_SERVER, Constants.MONGO_PORT);
+            PipelineFinisher finisher = new MongoDBInsertFinisher(Config.MONGO_SERVER, Config.MONGO_PORT);
 
             Pipeline pipeline = new Pipeline(reader, finisher);
             pipeline.addTask(new FindLemmasTask());
-            pipeline.addTask(new AnnotateTask(Constants.SPOTLIGHT_ENDPOINT));
-            pipeline.addTask(new FindTypesTask(Constants.DBPEDIA_ENDPOINT));
-            pipeline.addTask(new FindCategoriesTask(Constants.DBPEDIA_ENDPOINT));
-            pipeline.addTask(new FindHypernymsTask(Constants.HYPERNYMS_ENDPOINT));
+            pipeline.addTask(new AnnotateTask(Config.SPOTLIGHT_ENDPOINT));
+            pipeline.addTask(new FindTypesTask(Config.DBPEDIA_ENDPOINT));
+            pipeline.addTask(new FindCategoriesTask(Config.DBPEDIA_ENDPOINT));
+            pipeline.addTask(new FindHypernymsTask(Config.HYPERNYMS_ENDPOINT));
 
 
             PipelineThread task = new PipelineThread(reader, finisher, pipeline);

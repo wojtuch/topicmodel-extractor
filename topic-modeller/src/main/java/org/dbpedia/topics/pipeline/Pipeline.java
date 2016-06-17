@@ -20,6 +20,7 @@ public class Pipeline {
      * Creates a Pipeline.
      * The source dataset will be provided by the Reader.readDataset() method.
      * @param datasetReader
+     * @param pipelineFinisher
      */
     public Pipeline(Reader datasetReader, PipelineFinisher pipelineFinisher) {
         this.datasetReader = datasetReader;
@@ -52,7 +53,6 @@ public class Pipeline {
             if (pipelineFinisher instanceof MongoDBInsertFinisher) {
                 MongoDBInsertFinisher casted = (MongoDBInsertFinisher) pipelineFinisher;
                 if (casted.recordAlreadyExists(instance)) {
-                    System.out.println(instance.getUri() + " already present in the database. Skipping.");
                     continue;
                 }
             }

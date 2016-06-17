@@ -1,7 +1,7 @@
 package org.dbpedia.topics.io;
 
 import com.mongodb.MongoClient;
-import org.dbpedia.topics.Constants;
+import org.dbpedia.topics.Config;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.models.impl.WikipediaArticle;
 import org.mongodb.morphia.Datastore;
@@ -24,7 +24,7 @@ public class MongoWrapper {
         morphia.map(DBpediaAbstract.class);
         morphia.map(WikipediaArticle.class);
 
-        datastore = morphia.createDatastore(mongoClient, Constants.MONGO_DB);
+        datastore = morphia.createDatastore(mongoClient, Config.MONGO_DB);
         datastore.ensureIndexes();
     }
 

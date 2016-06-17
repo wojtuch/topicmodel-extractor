@@ -19,7 +19,7 @@ public class FindCategoriesInMemoryTask extends PipelineTask {
     private Map<String, List<String>> categories = new HashMap<>();
 
     public FindCategoriesInMemoryTask(String categoriesTtlFile) {
-        categories = Utils.readSubjectObjectLookup(categoriesTtlFile, PARSE_TRIPLE_REGEX);
+        categories = Utils.readSubjectObjectMappings(categoriesTtlFile, PARSE_TRIPLE_REGEX);
         System.out.println("Read categories: "+categories.size());
     }
 
