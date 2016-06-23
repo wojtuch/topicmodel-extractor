@@ -6,6 +6,7 @@ import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.models.impl.WikipediaArticle;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
+import org.mongodb.morphia.query.MorphiaIterator;
 
 import java.util.List;
 
@@ -39,6 +40,11 @@ public class MongoWrapper {
     public <T> List<T> getAllRecords(Class<T> clazz) {
         List<T> result = datastore.createQuery(clazz).asList();
         return result;
+    }
+
+    public <T> MorphiaIterator<T, T> getAllRecordsIterator(Class<T> clazz) {
+        MorphiaIterator iterator = datastore.find(clazz).field("spotlightAnnotation").exists().limit(1).fetch();
+        return iterator;
     }
 
     public <T> boolean recordExists(Class<T> clazz, String uri) {
