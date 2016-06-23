@@ -19,7 +19,7 @@ public class FindTypesInMemoryTask extends PipelineTask {
     private Map<String, List<String>> types = new HashMap<>();
 
     public FindTypesInMemoryTask(String typesTtlFile) {
-        types = Utils.readSubjectObjectMappings(typesTtlFile, PARSE_TRIPLE_REGEX);
+        types = Utils.readSubjectObjectMappings(PARSE_TRIPLE_REGEX, typesTtlFile);
         System.out.println("Read types: "+types.size());
     }
 

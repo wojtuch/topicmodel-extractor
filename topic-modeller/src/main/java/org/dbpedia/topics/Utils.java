@@ -3,10 +3,7 @@ package org.dbpedia.topics;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +20,7 @@ public class Utils {
         return -1;
     }
 
-    public static Map<String, List<String>> readSubjectObjectMappings(String filename, String parseRegex) {
+    public static Map<String, List<String>> readSubjectObjectMappings(String parseRegex, String filename) {
         Map<String, List<String>> result = new HashMap<>();
 
         try {
@@ -41,6 +38,31 @@ public class Utils {
                     });
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    public static List<String[]> createPowerSet(String... items) {
+        List<String[]> result = new ArrayList<>();
+        int numItems = items.length;
+
+        for (int i = 1; i < Math.pow(2, numItems); i++) {
+            String binaryRepresentation = String.format("%"+numItems+"s", Integer.toBinaryString(i));
+
+            String[] elems = new String[numItems];
+            for (int idx = 0; idx < numItems; idx++) {
+                char currentVal = binaryRepresentation.charAt(idx);
+                if (currentVal == '1') {
+                    elems[idx] = items[idx];
+                }
+            }
+
+            String[] notNullElems = Arrays.stream(elems)
+                    .filter(elem -> elem != null)
+                    .toArray(size -> new String[size]);
+
+            result.add(notNullElems);
         }
 
         return result;

@@ -19,7 +19,7 @@ public class FindHypernymsInMemoryTask extends PipelineTask {
     private Map<String, List<String>> hypernyms = new HashMap<>();
 
     public FindHypernymsInMemoryTask(String hypernymsTtlFile) {
-        hypernyms = Utils.readSubjectObjectMappings(hypernymsTtlFile, PARSE_TRIPLE_REGEX);
+        hypernyms = Utils.readSubjectObjectMappings(PARSE_TRIPLE_REGEX, hypernymsTtlFile);
         System.out.println("Read hypernyms: "+hypernyms.size());
     }
 
