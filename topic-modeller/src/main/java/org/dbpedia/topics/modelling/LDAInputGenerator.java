@@ -29,22 +29,19 @@ public class LDAInputGenerator {
         }
         else if (feature.equals(Constants.FEATURE_DESCRIPTOR_ENTITIES)) {
             List<String> entities = document.getSpotlightAnnotation().getResources()
-                    .parallelStream()
-                    .map(r -> Constants.FEATURE_PREFIX_ENTITIES + r.getUri())
-                    .collect(Collectors.toList());
-
+                .parallelStream()
+                .map(r -> Constants.FEATURE_PREFIX_ENTITIES + r.getUri())
+                .collect(Collectors.toList());
             featureVector.addAll(entities);
         }
         else if (feature.equals(Constants.FEATURE_DESCRIPTOR_TYPES)) {
             Stream<SpotlightResource> s = document.getSpotlightAnnotation().getResources().stream();
             s.forEach(resource -> {
-
                 List<String> types = resource.getRdfTypes()
-                        .stream()
-                        .filter(rdfType -> rdfType.contains("dbpedia.org") && !rdfType.contains("yago"))
-                        .map(rdfType -> Constants.FEATURE_PREFIX_TYPES + rdfType)
-                        .collect(Collectors.toList());
-
+                    .stream()
+                    .filter(rdfType -> rdfType.contains("dbpedia.org") && !rdfType.contains("yago"))
+                    .map(rdfType -> Constants.FEATURE_PREFIX_TYPES + rdfType)
+                    .collect(Collectors.toList());
                 featureVector.addAll(types);
             });
         }
@@ -53,24 +50,22 @@ public class LDAInputGenerator {
             s.forEach(resource -> {
                 List<String> categories = new ArrayList<>();
                 categories.addAll(
-                        resource.getDctSubjects()
-                                .stream()
-                                .map(dcSubj -> Constants.FEATURE_PREFIX_CATEGORIES + dcSubj)
-                                .collect(Collectors.toList())
+                    resource.getDctSubjects()
+                        .stream()
+                        .map(dcSubj -> Constants.FEATURE_PREFIX_CATEGORIES + dcSubj)
+                        .collect(Collectors.toList())
                 );
-
                 featureVector.addAll(categories);
             });
         }
         else if (feature.equals(Constants.FEATURE_DESCRIPTOR_HYPERNYMS)) {
             featureVector.addAll(
-                    document.getHypernyms()
-                            .parallelStream()
-                            .map(h -> Constants.FEATURE_PREFIX_HYPERNYMS + h)
-                            .collect(Collectors.toList())
+                document.getHypernyms()
+                    .parallelStream()
+                    .map(h -> Constants.FEATURE_PREFIX_HYPERNYMS + h)
+                    .collect(Collectors.toList())
             );
         }
-
 
         String featureString = featureVector.stream().collect(Collectors.joining(" "));
         return featureString;
@@ -86,27 +81,34 @@ public class LDAInputGenerator {
     }
 
     public List<String> generateFeatureMatrix (Dataset dataset) {
-        int size = dataset.size();
+        List<String> featureMatrix = new ArrayList<>();
 
-        List<List<String>> temp = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            temp.add(new ArrayList<>());
+        for (Instance instance : dataset) {
+            featureMatrix.add(generateFeatureVector(instance));
         }
 
-        //go through passed features
-        for (String feature : features) {
-            //go through every document
-            for (int i = 0; i < size; i++) {
-                List<String> current = temp.get(i);
-                String words = generateForOneFeature(dataset.getDocument(i), feature);
-                current.add(words);
-                temp.set(i, current);
-            }
-        }
-
-        List<String> featureMatrix = temp.stream()
-                .map(list -> list.stream().collect(Collectors.joining(" ")))
-                .collect(Collectors.toList());
         return featureMatrix;
+//        int size = dataset.size();
+//
+//        List<List<String>> temp = new ArrayList<>();
+//        for (int i = 0; i < size; i++) {
+//            temp.add(new ArrayList<>());
+//        }
+//
+//        //go through passed features
+//        for (String feature : features) {
+//            //go through every document
+//            for (int i = 0; i < size; i++) {
+//                List<String> current = temp.get(i);
+//                String words = generateForOneFeature(dataset.getDocument(i), feature);
+//                current.add(words);
+//                temp.set(i, current);
+//            }
+//        }
+//
+//        List<String> featureMatrix = temp.stream()
+//                .map(list -> list.stream().collect(Collectors.joining(" ")))
+//                .collect(Collectors.toList());
+//        return featureMatrix;
     }
 }

@@ -4,15 +4,17 @@ import cc.mallet.pipe.*;
 import cc.mallet.pipe.iterator.ArrayIterator;
 import cc.mallet.topics.ParallelTopicModel;
 import cc.mallet.topics.TopicInferencer;
+import cc.mallet.types.Alphabet;
+import cc.mallet.types.IDSorter;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import org.dbpedia.topics.Constants;
 import org.dbpedia.topics.io.StopWords;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -39,9 +41,14 @@ public class LdaModel implements TopicModel {
     };
 
     private String[] blacklistTypes = new String[]{
+        Constants.FEATURE_PREFIX_TYPES + "http://dbpedia.org/ontology/Agent",
+        Constants.FEATURE_PREFIX_TYPES + "http://dbpedia.org/ontology/Place",
+        Constants.FEATURE_PREFIX_TYPES + "http://dbpedia.org/ontology/Location",
+        Constants.FEATURE_PREFIX_TYPES + "http://dbpedia.org/ontology/PopulatedPlace"
     };
 
     private String[] blacklistCategories = new String[]{
+            Constants.FEATURE_PREFIX_CATEGORIES + "http://dbpedia.org/resource/Category:Living_people"
     };
 
     private String[] blacklistHypernyms = new String[]{
@@ -98,6 +105,40 @@ public class LdaModel implements TopicModel {
     public void readFromFile(String inputfile) throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(inputfile))){
             this.model = (ParallelTopicModel) ois.readObject();
+        }
+    }
+
+
+    public void describeTopicModel(String outputFilename, int numTopicDescribingWords) throws IOException {
+        // The data alphabet maps word IDs to strings
+        Alphabet dataAlphabet = model.getAlphabet();
+
+        // Get an array of sorted sets of word ID/count pairs
+        ArrayList<TreeSet<IDSorter>> topicSortedWords = model.getSortedWords();
+
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(outputFilename))){
+            // Show top words in topics with proportions for the first document
+            for (int topic = 0; topic < model.getNumTopics(); topic++) {
+                Iterator<IDSorter> iterator = topicSortedWords.get(topic).iterator();
+
+                int rank = 0;
+                List<String> topicWords = new ArrayList<>();
+                List<Double> topicWordsWeights = new ArrayList<>();
+
+                while (iterator.hasNext() && rank < numTopicDescribingWords) {
+                    IDSorter idCountPair = iterator.next();
+                    topicWords.add((String) dataAlphabet.lookupObject(idCountPair.getID()));
+                    topicWordsWeights.add(idCountPair.getWeight());
+                    rank++;
+                }
+
+                double sumWeights = model.getSortedWords().get(topic).stream().mapToDouble(ids -> ids.getWeight()).sum();
+
+                bw.write(topicWords.stream().map(f -> "\"" + f + "\"").collect(Collectors.joining(",")));
+                bw.newLine();
+                bw.write(topicWordsWeights.stream().map(wt -> String.valueOf(wt/sumWeights)).collect(Collectors.joining(",")));
+                bw.newLine();
+            }
         }
     }
 
