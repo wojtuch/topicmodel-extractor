@@ -1,12 +1,9 @@
 package org.dbpedia.topics;
 
 import org.apache.commons.cli.ParseException;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
-import org.dbpedia.topics.dataset.readers.impl.MongoReader;
 import org.dbpedia.topics.io.MongoWrapper;
 import org.dbpedia.topics.modelling.LDAInputGenerator;
 import org.dbpedia.topics.modelling.LdaModel;
@@ -177,6 +174,9 @@ public class Main {
                 .filter(path -> path.toFile().isFile() && path.toString().endsWith("ser"));
 
         String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
+        String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT_FILE);
+        String outputFormat = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT) == null? "NT" :
+                opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT);
 
         if (strNumTopicsArr != null) {
             stream = stream.filter(path -> {
@@ -207,7 +207,7 @@ public class Main {
             }
 
             RDFEncoder encoder = new RDFEncoder(ldaModel);
-            encoder.encodeTopicModel(3);
+            encoder.encodeTopics(15);
 
             LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
             MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class, 1);
@@ -215,7 +215,17 @@ public class Main {
                 String input = inputGenerator.generateFeatureVector(dbAbstract);
                 encoder.encodeOneObservation(dbAbstract.getUri(), input);
             }
-            System.out.println(encoder.toString("NT"));
+
+            if (outputFile == null) {
+                System.out.println(encoder.toString(outputFormat));
+            }
+            else {
+                try {
+                    Files.write(Paths.get(outputFile), encoder.toString(outputFormat).getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         });
     }
 

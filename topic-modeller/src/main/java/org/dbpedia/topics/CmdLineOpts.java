@@ -38,6 +38,14 @@ public class CmdLineOpts {
     public static final Option ENCODE_MINED_TOPICS = Option.builder("E").longOpt("encode")
             .desc("Encode mined topics as RDF.").build();
 
+    public static final Option OUTPUT_FILE = Option.builder("o").longOpt("output-file")
+            .desc("Specify the output file.").hasArg().argName("output file").build();
+
+    public static final Option OUTPUT_FORMAT = Option.builder("of").longOpt("output-format")
+            .desc("Specify the output format. For accepted jena formats see:" +
+                    "https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats")
+            .hasArg().argName("output format").build();
+
     public static final Option HELP = Option.builder("h").longOpt("help").desc("Shows this message.").build();
 
     private Options options = new Options();
@@ -45,7 +53,8 @@ public class CmdLineOpts {
     private String cmdName = "topic-modeller";
 
     public CmdLineOpts() {
-        Option[] optsArr = new Option[]{TOPIC_MODELLING, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER, FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, HELP};
+        Option[] optsArr = new Option[]{TOPIC_MODELLING, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER,
+                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, OUTPUT_FILE, OUTPUT_FORMAT, HELP};
         for (Option option : optsArr) {
             this.options.addOption(option);
         }

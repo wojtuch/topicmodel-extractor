@@ -40,7 +40,7 @@ public class RDFEncoder {
         rdfModel = ModelFactory.createMemModelMaker().createModel(graphName);
     }
 
-    public void encodeTopicModel(int numTopicDescribingWords) {
+    public void encodeTopics(int numTopicDescribingWords) {
         DecimalFormat decimalFormatter = new DecimalFormat("#0.00");
         // The data alphabet maps word IDs to strings
         Alphabet dataAlphabet = ldaModel.getModel().getAlphabet();
