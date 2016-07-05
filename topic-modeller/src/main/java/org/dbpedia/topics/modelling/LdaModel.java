@@ -108,6 +108,13 @@ public class LdaModel implements TopicModel {
         }
     }
 
+    public ParallelTopicModel getModel() {
+        return model;
+    }
+
+    public List<String> getFeatures() {
+        return features;
+    }
 
     public void describeTopicModel(String outputFilename, int numTopicDescribingWords) throws IOException {
         // The data alphabet maps word IDs to strings

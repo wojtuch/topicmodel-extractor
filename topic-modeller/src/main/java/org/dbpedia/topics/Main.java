@@ -1,23 +1,40 @@
 package org.dbpedia.topics;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
+import org.dbpedia.topics.dataset.readers.impl.MongoReader;
+import org.dbpedia.topics.io.MongoWrapper;
+import org.dbpedia.topics.modelling.LDAInputGenerator;
+import org.dbpedia.topics.modelling.LdaModel;
 import org.dbpedia.topics.pipeline.Pipeline;
 import org.dbpedia.topics.pipeline.PipelineFinisher;
 import org.dbpedia.topics.pipeline.PipelineThread;
 import org.dbpedia.topics.pipeline.impl.*;
+import org.dbpedia.topics.rdfencoder.RDFEncoder;
+import org.mongodb.morphia.query.MorphiaIterator;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by wlu on 26.05.16.
  */
 public class Main {
 
-    public static void main(String[] args) throws URISyntaxException {
+    public static void main(String[] args) throws URISyntaxException, IOException {
         CmdLineOpts opts = new CmdLineOpts();
 
         try {
@@ -44,7 +61,17 @@ public class Main {
                 opts.printHelp();
             }
         }
-
+        else if  (opts.hasOption(CmdLineOpts.TOPIC_MODELLING)) {
+            System.out.println("Starting topic modelling");
+            startTopicModelling(opts);
+        }
+        else if  (opts.hasOption(CmdLineOpts.ENCODE_MINED_TOPICS)) {
+            System.out.println("Starting the encoder");
+            startEncoding(opts);
+        }
+        else {
+            opts.printHelp();
+        }
     }
 
     private static void startPipeline(CmdLineOpts opts) throws URISyntaxException {
@@ -66,7 +93,7 @@ public class Main {
             reader = new DBpediaAbstractsReader(Config.ABSTRACTS_TRIPLE_FILE);
         }
         else {
-            throw new IllegalArgumentException("Unknown finisher: " + finisherStr);
+            throw new IllegalArgumentException("Unknown reader: " + readerStr);
         }
 
         Pipeline pipeline = new Pipeline(reader, finisher);
@@ -103,13 +130,93 @@ public class Main {
             }
         }
 
-//        try {
-//            pipeline.doWork();
-//        }
-//        finally {
-//            finisher.close();
-//            reader.close();
-//        }
+        try {
+            pipeline.doWork();
+        }
+        finally {
+            finisher.close();
+            reader.close();
+        }
+    }
+
+    private static void startTopicModelling(CmdLineOpts opts) throws IOException {
+        String[] features = opts.getOptionValues(CmdLineOpts.FEATURES);
+        String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
+        int[] numTopicsArr = new int[strNumTopicsArr.length];
+        for (int i = 0; i < strNumTopicsArr.length; i++) {
+            numTopicsArr[i] = Integer.valueOf(strNumTopicsArr[i]);
+        }
+
+        LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
+        MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
+
+        MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
+        List<String> featureMatrix = new ArrayList<>();
+        for (DBpediaAbstract dbAbstract : iter) {
+            featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
+        }
+
+        String outputDir = "models-abstracts";
+        new File(outputDir).mkdirs();
+
+        for (int numTopics : numTopicsArr) {
+            LdaModel ldaModel = new LdaModel(features);
+            ldaModel.createModel(featureMatrix, numTopics, 1000, 16);
+
+            String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
+            String outputModelFile = String.format("%s/%d-%s.ser", outputDir, numTopics, featureSetDescriptor);
+            ldaModel.saveToFile(outputModelFile);
+            String outputCsvFile = String.format("%s/%d-%s.csv", outputDir, numTopics, featureSetDescriptor);
+            ldaModel.describeTopicModel(outputCsvFile, 20);
+        }
+    }
+
+
+    private static void startEncoding(CmdLineOpts opts) throws IOException {
+        Stream<Path> stream = Files.walk(Paths.get("models-abstracts"))
+                .filter(path -> path.toFile().isFile() && path.toString().endsWith("ser"));
+
+        String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
+
+        if (strNumTopicsArr != null) {
+            stream = stream.filter(path -> {
+                String filename = path.getFileName().toString();
+                for (String s : strNumTopicsArr) {
+                    if (filename.startsWith(s+"-")) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+        }
+
+        MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
+
+        stream.forEach(path -> {
+            System.out.println(path);
+            String filenameNoExt = path.getFileName().toString().replace(".ser", "");
+            String[] features = filenameNoExt.split("-", 2)[1].split("-");
+            LdaModel ldaModel = new LdaModel(features);
+            try {
+                ldaModel.readFromFile(path.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            RDFEncoder encoder = new RDFEncoder(ldaModel);
+            encoder.encodeTopicModel(3);
+
+            LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
+            MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class, 1);
+            for (DBpediaAbstract dbAbstract : iter) {
+                String input = inputGenerator.generateFeatureVector(dbAbstract);
+                encoder.encodeOneObservation(dbAbstract.getUri(), input);
+            }
+            System.out.println(encoder.toString("NT"));
+        });
     }
 
     private static void multiThreadedPipeline(int numWorkers) throws URISyntaxException {

@@ -11,7 +11,7 @@ public class CmdLineOpts {
     public static final Option TOPIC_MODELLING = Option.builder("T").longOpt("topic-modelling")
             .desc("Starts the topic modelling. Requires specifying the reader and the finisher.").build();
 
-    public static final Option NUM_TOPICS = Option.builder("n").longOpt("num-topics").hasArgs().required(true)
+    public static final Option NUM_TOPICS = Option.builder("n").longOpt("num-topics").hasArgs()
             .desc("How many topics should be mined.").build();
 
     public static final Option FEATURES = Option.builder("f").longOpt("features")
