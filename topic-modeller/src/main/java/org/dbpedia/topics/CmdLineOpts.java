@@ -46,6 +46,10 @@ public class CmdLineOpts {
                     "https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats")
             .hasArg().argName("output format").build();
 
+    public static final Option NUM_TOPIC_WORDS = Option.builder("w").longOpt("num-topic-words")
+            .desc("Using how many words should a topic be described?")
+            .hasArg().argName("number words").build();
+
     public static final Option HELP = Option.builder("h").longOpt("help").desc("Shows this message.").build();
 
     private Options options = new Options();
@@ -54,7 +58,7 @@ public class CmdLineOpts {
 
     public CmdLineOpts() {
         Option[] optsArr = new Option[]{TOPIC_MODELLING, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER,
-                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, OUTPUT_FILE, OUTPUT_FORMAT, HELP};
+                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, OUTPUT_FILE, OUTPUT_FORMAT, NUM_TOPIC_WORDS, HELP};
         for (Option option : optsArr) {
             this.options.addOption(option);
         }
@@ -76,6 +80,10 @@ public class CmdLineOpts {
 
     public String getOptionValue(Option opt) {
         return cmd.getOptionValue(opt.getOpt());
+    }
+
+    public String getOptionValue(Option opt, String def) {
+        return cmd.getOptionValue(opt.getOpt(), def);
     }
 
     public String[] getOptionValues(Option opt) {

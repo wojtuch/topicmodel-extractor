@@ -175,8 +175,8 @@ public class Main {
 
         String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
         String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT_FILE);
-        String outputFormat = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT) == null? "NT" :
-                opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT);
+        String outputFormat = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT, "NT");
+        int numDescribingWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "10"));
 
         if (strNumTopicsArr != null) {
             stream = stream.filter(path -> {
@@ -194,7 +194,6 @@ public class Main {
         MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
 
         stream.forEach(path -> {
-            System.out.println(path);
             String filenameNoExt = path.getFileName().toString().replace(".ser", "");
             String[] features = filenameNoExt.split("-", 2)[1].split("-");
             LdaModel ldaModel = new LdaModel(features);
@@ -207,10 +206,10 @@ public class Main {
             }
 
             RDFEncoder encoder = new RDFEncoder(ldaModel);
-            encoder.encodeTopics(15);
+            encoder.encodeTopics(numDescribingWords);
 
             LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
-            MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class, 1);
+            MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
             for (DBpediaAbstract dbAbstract : iter) {
                 String input = inputGenerator.generateFeatureVector(dbAbstract);
                 encoder.encodeOneObservation(dbAbstract.getUri(), input);

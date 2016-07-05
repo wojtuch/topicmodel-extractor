@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
  */
 public class RDFEncoder {
 
-    private static final String TOPIC_NAMESPACE = "http://dbpedia.org/topic/";
     private static final String NAMESPACE = "http://example.org/topic-vocab#";
     private static final String NAMESPACE_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
     private static final String NAMESPACE_DBO = "http://dbpedia.org/ontology/";
@@ -70,7 +69,7 @@ public class RDFEncoder {
                     .collect(Collectors.toList());
 
             String topicLabel = "Topic"+(topic+1);
-            String topicUri = TOPIC_NAMESPACE+topicLabel;
+            String topicUri = NAMESPACE+topicLabel;
 
             Resource resource = rdfModel.getResource(topicUri);
 
@@ -129,7 +128,7 @@ public class RDFEncoder {
             rdfModel.add(
                     anonRes,
                     rdfModel.createProperty(NAMESPACE+"hasTopicComponent"),
-                    rdfModel.getResource(TOPIC_NAMESPACE+topicLabel)
+                    rdfModel.getResource(NAMESPACE+topicLabel)
             );
 
             rdfModel.add(
