@@ -43,7 +43,7 @@ public class MongoWrapper {
     }
 
     public <T> MorphiaIterator<T, T> getAllRecordsIterator(Class<T> clazz) {
-        MorphiaIterator iterator = datastore.find(clazz).field("spotlightAnnotation").exists().limit(1).fetch();
+        MorphiaIterator iterator = datastore.find(clazz).field("spotlightAnnotation").exists().fetch();
         return iterator;
     }
 
