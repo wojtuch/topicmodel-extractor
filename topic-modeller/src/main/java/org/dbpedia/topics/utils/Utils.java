@@ -1,4 +1,4 @@
-package org.dbpedia.topics;
+package org.dbpedia.topics.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;

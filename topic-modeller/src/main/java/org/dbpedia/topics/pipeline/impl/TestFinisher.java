@@ -10,10 +10,8 @@ public class TestFinisher extends PipelineFinisher {
 
     @Override
     public void finishInstance(Instance instance) {
-        System.out.print(instance.getUri());
-        System.out.println(instance.getLemmas());
-        System.out.println(instance.getHypernyms());
-        System.out.println(instance.getText());
+        System.out.println("Finishing " + instance.getUri());
+        System.out.println("Text " + instance.getText().trim());
     }
 
     @Override

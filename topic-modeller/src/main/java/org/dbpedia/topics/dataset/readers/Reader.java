@@ -13,7 +13,4 @@ public abstract class Reader {
      * @return
      */
     public abstract Dataset readDataset();
-
-    public void close(){
-    }
 }

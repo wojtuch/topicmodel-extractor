@@ -3,17 +3,19 @@ package org.dbpedia.topics.pipeline;
 import org.dbpedia.topics.dataset.models.Dataset;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.dataset.readers.Reader;
+import org.dbpedia.topics.dataset.readers.StreamingReader;
 import org.dbpedia.topics.pipeline.impl.MongoDBInsertFinisher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Created by wlu on 07.06.16.
  */
-public class Pipeline implements IPipeline {
+public class StreamingPipeline implements IPipeline {
     private List<PipelineTask> pipelineTasks = new ArrayList<>();
-    private Reader datasetReader;
+    private StreamingReader datasetReader;
     private PipelineFinisher pipelineFinisher;
 
     /**
@@ -22,7 +24,7 @@ public class Pipeline implements IPipeline {
      * @param datasetReader
      * @param pipelineFinisher
      */
-    public Pipeline(Reader datasetReader, PipelineFinisher pipelineFinisher) {
+    public StreamingPipeline(StreamingReader datasetReader, PipelineFinisher pipelineFinisher) {
         this.datasetReader = datasetReader;
         this.pipelineFinisher = pipelineFinisher;
     }
@@ -41,41 +43,21 @@ public class Pipeline implements IPipeline {
      * Eventually, the finisher
      */
     public void doWork() {
-        Dataset dataset = datasetReader.readDataset();
-        int ct = 0;
+        System.out.println("Starting streaming pipeline.");
+        Stream<Instance> dataset = datasetReader.readDataset();
 
-        for (Instance instance : dataset) {
-            if (++ct % 500 == 0) {
-                System.out.println(ct);
-            }
+        // skip the pipeline if the instance is present in the database
+        if (pipelineFinisher instanceof MongoDBInsertFinisher) {
+            MongoDBInsertFinisher casted = (MongoDBInsertFinisher) pipelineFinisher;
+            dataset = dataset.filter(instance -> !casted.recordAlreadyExists(instance));
+        }
 
-            // skip the pipeline if the instance is present in the database
-            if (pipelineFinisher instanceof MongoDBInsertFinisher) {
-                MongoDBInsertFinisher casted = (MongoDBInsertFinisher) pipelineFinisher;
-                if (casted.recordAlreadyExists(instance)) {
-                    continue;
-                }
-            }
-
+        dataset.forEach(instance -> {
             for (PipelineTask pipelineTask : pipelineTasks) {
                 pipelineTask.processInstance(instance);
             }
             pipelineFinisher.finishInstance(instance);
-        }
+        });
 
-    }
-    /**
-     * Reads the dataset, passes it for sequential processing by the tasks and finishes the pipeline.
-     * Eventually, the finisher
-     */
-    public void doWorkBulk() {
-        Dataset dataset = datasetReader.readDataset();
-
-        for (PipelineTask pipelineTask : pipelineTasks) {
-            System.out.println(pipelineTask.getClass());
-            dataset = pipelineTask.start(dataset);
-        }
-
-        pipelineFinisher.finishPipeline(dataset);
     }
 }

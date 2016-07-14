@@ -24,7 +24,7 @@ public class PipelineThread implements Runnable {
         }
         finally {
             finisher.close();
-            reader.close();
+//            reader.close();
         }
     }
 }

@@ -29,8 +29,8 @@ public class MongoReader<T extends Instance> extends Reader {
         return dataset;
     }
 
-    @Override
-    public void close(){
-        mongo.close();
-    }
+//    @Override
+//    public void close(){
+//        mongo.close();
+//    }
 }

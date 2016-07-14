@@ -2,26 +2,28 @@ package org.dbpedia.topics;
 
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.io.MongoWrapper;
-import org.dbpedia.topics.pipeline.impl.FindHypernymsInMemoryTask;
+import org.dbpedia.topics.utils.ArticleCleaner;
+import org.dbpedia.topics.utils.Utils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 /**
  * Created by wlu on 15.06.16.
  */
 public class Testing {
     public static void main(String[] args) {
-        List<Integer> temp = new ArrayList<>();
-        Utils.readSubjectObjectMappings("(<(.*?)>\\s*<http://purl\\.org/linguistics/gold/hypernym>\\s*<(.*?)>.*\\.)" +
-                        "|" +
-                        "(<(.*?)>\\s*<http://www\\.w3\\.org/1999/02/22-rdf-syntax-ns#type>\\s*<(.*?)>.*\\.)",
-                Config.HYPERNYMS_TRIPLE_FILE)
-            .forEach((str, lis) -> {
-                temp.add(lis.size());
-            });
-        System.out.println(temp.stream().mapToInt(Integer::intValue).sum());
+        try {
+            Files.lines(Paths.get("/media/data/datasets/gsoc/enwiki-latest.lines")).limit(1)
+                    .map(line -> ArticleCleaner.replaceLinks(line)).forEach(System.out::println);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void testMongo(){

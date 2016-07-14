@@ -3,15 +3,16 @@ package org.dbpedia.topics;
 import org.apache.commons.cli.ParseException;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.readers.Reader;
+import org.dbpedia.topics.dataset.readers.StreamingReader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
+import org.dbpedia.topics.dataset.readers.impl.WikipediaDumpStreamingReader;
 import org.dbpedia.topics.io.MongoWrapper;
 import org.dbpedia.topics.modelling.LDAInputGenerator;
 import org.dbpedia.topics.modelling.LdaModel;
-import org.dbpedia.topics.pipeline.Pipeline;
-import org.dbpedia.topics.pipeline.PipelineFinisher;
-import org.dbpedia.topics.pipeline.PipelineThread;
+import org.dbpedia.topics.pipeline.*;
 import org.dbpedia.topics.pipeline.impl.*;
 import org.dbpedia.topics.rdfencoder.RDFEncoder;
+import org.dbpedia.topics.utils.Utils;
 import org.mongodb.morphia.query.MorphiaIterator;
 
 import java.io.File;
@@ -72,13 +73,16 @@ public class Main {
     }
 
     private static void startPipeline(CmdLineOpts opts) throws URISyntaxException {
-        Reader reader;
         PipelineFinisher finisher;
+        IPipeline pipeline;
 
         String finisherStr = opts.getOptionValue(CmdLineOpts.FINISHER);
         if (finisherStr.equals("mongo")) {
-            System.out.println("mongo");
+            System.out.println("mongodb finisher");
             finisher = new MongoDBInsertFinisher(Config.MONGO_SERVER, Config.MONGO_PORT);
+        }else if (finisherStr.equals("dummy")) {
+            System.out.println("dummy finisher");
+            finisher = new TestFinisher();
         }
         else {
             throw new IllegalArgumentException("Unknown finisher: " + finisherStr);
@@ -86,17 +90,18 @@ public class Main {
 
         String readerStr = opts.getOptionValue(CmdLineOpts.READER);
         if (readerStr.equals("abstracts")) {
-            System.out.println("abstracts");
-            reader = new DBpediaAbstractsReader(Config.ABSTRACTS_TRIPLE_FILE);
-        }
-        else {
+            Reader reader = new DBpediaAbstractsReader(Config.ABSTRACTS_TRIPLE_FILE);
+            pipeline = new Pipeline(reader, finisher);
+        } else if (readerStr.equals("wikidump")) {
+            StreamingReader reader = new WikipediaDumpStreamingReader(Config.READABLE_WIKI);
+            pipeline = new StreamingPipeline(reader, finisher);
+        } else {
             throw new IllegalArgumentException("Unknown reader: " + readerStr);
         }
-
-        Pipeline pipeline = new Pipeline(reader, finisher);
+        System.out.println("Reader: " + readerStr);
 
         List<String> tasks = Arrays.asList(opts.getOptionValues(CmdLineOpts.TASKS));
-        System.out.println(tasks);
+        System.out.println("Passed tasks: " + tasks);
 
         if (tasks.contains("lemma")) {
             pipeline.addTask(new FindLemmasTask());
@@ -132,7 +137,6 @@ public class Main {
         }
         finally {
             finisher.close();
-            reader.close();
         }
     }
 
