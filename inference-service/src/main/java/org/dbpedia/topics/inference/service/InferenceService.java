@@ -1,11 +1,16 @@
 package org.dbpedia.topics.inference.service;
 
+import net.sf.json.JSONException;
+import net.sf.json.JSONSerializer;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.dbpedia.topics.inference.Config;
 import org.dbpedia.topics.inference.Inferencer;
+import org.dbpedia.topics.inference.service.models.Prediction;
+import org.dbpedia.topics.inference.service.models.PredictionResponse;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
 
 /**
  * Root resource (exposed at "get-topics" path)
@@ -20,17 +25,34 @@ public class InferenceService {
      */
     @POST
     @Path("get-topics")
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response predict(@FormParam("text") String text) {
-        double[] prediction = Inferencer.predictTopicCoverage(text);
-        return Response.status(200).entity(Arrays.toString(prediction)).header("Access-Control-Allow-Origin", "*").build();
-    }
-
-    @GET
-    @Path("get-graph/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getGraph(@PathParam("id") Integer id) {
-        String graph = "";
-        return Response.status(200).entity(graph).header("Access-Control-Allow-Origin", "*").build();
+    public Response predict(@FormParam("spotlightAnnotationJSON") String spotlightAnnotationJSON) {
+        System.out.println("GOT MESSAGE " + spotlightAnnotationJSON);
+        try {
+            JSONSerializer.toJSON(spotlightAnnotationJSON);
+        }
+        catch (JSONException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Input must be a valid Spotlight annotation in JSON format!")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .build();
+        }
+
+        Inferencer inferencer = Inferencer.getInferencer(Config.INFERENCER_FEATURES);
+        double[] predictions = inferencer.predictTopicCoverage(spotlightAnnotationJSON);
+
+        PredictionResponse predictionResponse = new PredictionResponse();
+        for (int i = 0; i < predictions.length; i++) {
+            Prediction prediction = new Prediction();
+            prediction.setTopicId(i+1);
+            prediction.setTopicProbability(predictions[i]);
+            prediction.setTopicWords(inferencer.getWordsForTopic(i, Config.NUM_TOPIC_WORDS));
+            prediction.setTopicWordsCoverage(inferencer.getWordCoveragesForTopic(i, Config.NUM_TOPIC_WORDS));
+            predictionResponse.addPrediction(prediction);
+        }
+
+        String predictionRespJson = JSONSerializer.toJSON(predictionResponse).toString();
+
+        return Response.ok().header("Content-Type", MediaType.APPLICATION_JSON).entity(predictionRespJson).build();
     }
 }

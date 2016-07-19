@@ -86,9 +86,10 @@ public class SpotlightAnnotator {
         return result;
     }
 
-    private SpotlightAnnotation parseJsonResponseObject(JSONObject response) {
+    public SpotlightAnnotation parseJsonResponseObject(JSONObject response) {
         SpotlightAnnotation result = new SpotlightAnnotation();
 
+        result.setText(response.getString("@text"));
         result.setConfidence(Double.parseDouble(response.getString("@confidence")));
         result.setSupport(Integer.parseInt(response.getString("@support")));
         result.setTypes(response.getString("@types"));

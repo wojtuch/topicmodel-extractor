@@ -14,6 +14,8 @@ import java.util.List;
 @Embedded
 public class SpotlightAnnotation implements Serializable {
     @Property
+    private String text;
+    @Property
     private double confidence;
     @Property
     private int support;
@@ -26,6 +28,14 @@ public class SpotlightAnnotation implements Serializable {
     private List<SpotlightResource> resources = new ArrayList<>();
 
     public SpotlightAnnotation() {
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public double getConfidence() {

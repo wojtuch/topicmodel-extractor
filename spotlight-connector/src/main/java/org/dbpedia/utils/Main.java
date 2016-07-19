@@ -14,23 +14,21 @@ import java.util.List;
  */
 public class Main {
 
-    private static final String URL_SPOTLIGHT = "http://dbpedia:32783/rest/annotate";
+    private static final String URL_SPOTLIGHT = "http://localhost:32768/rest/annotate";
 //    private static final String URL_SPOTLIGHT = "http://spotlight.sztaki.hu:2222/rest/annotate";
 //    private static final String URL_SPOTLIGHT = "http://spotlight.dbpedia.org/rest/annotate";
 
     public static void main(String[] args) throws URISyntaxException, IOException {
         String text = "Berlin is the capital of Germany.".replaceAll("\\x03", "");
-        List<String> textList = Arrays.asList("Berlin is the capital of Germany", "Paris is the capital of France", "Rome is the capital of Italy");
 
-        SparqlConnector sparqlConnector = new SparqlConnector("http://dbpedia.org/sparql");
+        SparqlConnector sparqlConnector = new SparqlConnector("http://localhost:32770/sparql");
         SpotlightAnnotator spotlightAnnotator = new SpotlightAnnotator(URL_SPOTLIGHT);
 
-        SpotlightAnnotation annotation = spotlightAnnotator.annotate(text, 20, 0.5);
+        SpotlightAnnotation annotation = spotlightAnnotator.annotate(text, 0, 0.3);
         if (annotation != null) {
             for (SpotlightResource sr : annotation.getResources()) {
                 System.out.println(sr.getOffset() + ": " + sr.getUri());
-                System.out.println(sparqlConnector.getCategories(sr.getUri()));
-                break;
+                System.out.println(sparqlConnector.getHypernyms(sr.getUri()));
             }
         }
         else {

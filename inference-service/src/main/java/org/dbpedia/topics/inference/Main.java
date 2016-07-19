@@ -1,6 +1,6 @@
 package org.dbpedia.topics.inference;
 
-import org.dbpedia.topics.modelling.LdaModel;
+import org.dbpedia.topics.inference.service.CORSResponseFilter;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -21,7 +21,7 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
         try {
-            Inferencer.loadFile(Config.TOPIC_MODEL_FILE);
+            Inferencer.getInferencer(Config.INFERENCER_FEATURES).loadFile(Config.TOPIC_MODEL_FILE);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return;
@@ -42,10 +42,13 @@ public class Main {
         // create a resource config that scans for JAX-RS resources and providers
         // in com.example package
         final ResourceConfig rc = new ResourceConfig().packages("org.dbpedia.topics.inference.service");
+        rc.register(CORSResponseFilter.class);
 
         // create and start a new instance of grizzly http server
         // exposing the Jersey application at BASE_URI
-        return GrizzlyHttpServerFactory.createHttpServer(URI.create(Config.SERVER_BASE_URI), rc);
+        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(Config.SERVER_BASE_URI), rc);
+
+        return server;
     }
 }
 
