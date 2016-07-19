@@ -57,7 +57,8 @@ public class Inferencer {
         pipeline.addTask(new FindLemmasTask());
         pipeline.addTask(findHypernymsTask);
         pipeline.doWork();
-        double[] prediction = ldaModel.predict(inputGenerator.generateFeatureVector(finisher.getProcessedInstance()));
+        String featureVec = inputGenerator.generateFeatureVector(finisher.getProcessedInstance());
+        double[] prediction = ldaModel.predict(featureVec);
         for (int i = 0; i < prediction.length; i++) {
             prediction[i] = new BigDecimal(prediction[i]).setScale(4, RoundingMode.HALF_UP).doubleValue();
         }

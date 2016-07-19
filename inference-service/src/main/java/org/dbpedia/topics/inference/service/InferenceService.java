@@ -28,20 +28,21 @@ public class InferenceService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response predict(@FormParam("spotlightAnnotationJSON") String spotlightAnnotationJSON) {
         System.out.println("GOT MESSAGE " + spotlightAnnotationJSON);
+        PredictionResponse predictionResponse = new PredictionResponse();
         try {
             JSONSerializer.toJSON(spotlightAnnotationJSON);
         }
         catch (JSONException e) {
+            predictionResponse.setStatus("Input must be a valid Spotlight annotation in JSON format!");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Input must be a valid Spotlight annotation in JSON format!")
-                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .entity(JSONSerializer.toJSON(predictionResponse).toString())
                     .build();
         }
 
         Inferencer inferencer = Inferencer.getInferencer(Config.INFERENCER_FEATURES);
         double[] predictions = inferencer.predictTopicCoverage(spotlightAnnotationJSON);
 
-        PredictionResponse predictionResponse = new PredictionResponse();
         for (int i = 0; i < predictions.length; i++) {
             Prediction prediction = new Prediction();
             prediction.setTopicId(i+1);
