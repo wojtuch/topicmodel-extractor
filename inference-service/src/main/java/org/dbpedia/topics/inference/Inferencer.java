@@ -1,7 +1,5 @@
 package org.dbpedia.topics.inference;
 
-import cc.mallet.types.Alphabet;
-import cc.mallet.types.IDSorter;
 import org.dbpedia.topics.inference.service.models.EmptyFinisher;
 import org.dbpedia.topics.inference.service.models.InputToDataset;
 import org.dbpedia.topics.modelling.LDAInputGenerator;
@@ -13,7 +11,8 @@ import org.dbpedia.topics.pipeline.impl.FindLemmasTask;
 import org.dbpedia.topics.pipeline.impl.FindTypesInMemoryTask;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by wojlukas on 7/18/16.

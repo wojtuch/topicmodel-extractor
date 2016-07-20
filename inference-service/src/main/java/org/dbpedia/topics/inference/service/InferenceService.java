@@ -2,7 +2,6 @@ package org.dbpedia.topics.inference.service;
 
 import net.sf.json.JSONException;
 import net.sf.json.JSONSerializer;
-import org.dbpedia.topics.inference.Cache;
 import org.dbpedia.topics.inference.Config;
 import org.dbpedia.topics.inference.Inferencer;
 import org.dbpedia.topics.inference.service.models.Prediction;
