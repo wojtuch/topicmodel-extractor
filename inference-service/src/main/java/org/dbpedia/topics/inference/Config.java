@@ -17,6 +17,10 @@ public class Config {
     public static String HYPERNYMS_TRIPLE_FILE;
     public static String TYPES_TRIPLE_FILE;
     public static String CATEGORIES_TRIPLE_FILE;
+    public static String CACHE_DIR;
+    public static String CACHE_FILE_WORDS_FOR_TOPICS;
+    public static String CACHE_FILE_WORD_COVERAGES_FOR_TOPICS;
+    public static String CACHE_FILE_TOPICS_LABELS;
     static {
         try {
             Properties properties = new Properties();
@@ -30,6 +34,10 @@ public class Config {
             HYPERNYMS_TRIPLE_FILE = properties.getProperty("hypernyms_triple_file");
             TYPES_TRIPLE_FILE = properties.getProperty("types_triple_file");
             CATEGORIES_TRIPLE_FILE = properties.getProperty("categories_triple_file");
+            CACHE_DIR = properties.getProperty("cache_directory");
+            CACHE_FILE_WORDS_FOR_TOPICS = properties.getProperty("cache_file_words_for_topics");
+            CACHE_FILE_WORD_COVERAGES_FOR_TOPICS = properties.getProperty("cache_file_wordcoverages_for_topics");
+            CACHE_FILE_TOPICS_LABELS = properties.getProperty("cache_file_topics_labels");
         } catch (IOException e) {
             e.printStackTrace();
         }

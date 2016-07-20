@@ -13,8 +13,6 @@ import org.dbpedia.topics.pipeline.impl.FindLemmasTask;
 import org.dbpedia.topics.pipeline.impl.FindTypesInMemoryTask;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -45,9 +43,17 @@ public class Inferencer {
     private FindHypernymsInMemoryTask findHypernymsTask;
     private FindTypesInMemoryTask findTypesTask;
     private FindCategoriesInMemoryTask findCategories;
+    private Map<Integer, List<String>> wordsForTopics;
+    private Map<Integer, List<Double>> wordCoveragesForTopics;
+    private List<String> topicLabels;
 
     public void loadFile(String file) throws IOException, ClassNotFoundException {
+        System.out.println("Loading topic model ("+file+")...");
         ldaModel.readFromFile(file);
+        System.out.println("Loaded.");
+        wordsForTopics = Cache.getWordsForTopics(ldaModel);
+        wordCoveragesForTopics = Cache.getWordCoveragesForTopics(ldaModel);
+        topicLabels = Cache.getTopicLabels(ldaModel);
     }
 
     public double[] predictTopicCoverage(String spotlightAnnotation) {
@@ -59,50 +65,18 @@ public class Inferencer {
         pipeline.doWork();
         String featureVec = inputGenerator.generateFeatureVector(finisher.getProcessedInstance());
         double[] prediction = ldaModel.predict(featureVec);
-        for (int i = 0; i < prediction.length; i++) {
-            prediction[i] = new BigDecimal(prediction[i]).setScale(4, RoundingMode.HALF_UP).doubleValue();
-        }
         return prediction;
     }
 
-    public List<String> getWordsForTopic(int topicId, int topN) {
-        List<String> result = new ArrayList<>();
-
-        // The data alphabet maps word IDs to strings
-        Alphabet dataAlphabet = ldaModel.getModel().getAlphabet();
-
-        // Get an array of sorted sets of word ID/count pairs
-        ArrayList<TreeSet<IDSorter>> topicSortedWords = ldaModel.getModel().getSortedWords();
-
-        Iterator<IDSorter> iterator = topicSortedWords.get(topicId).iterator();
-
-        int rank = 0;
-        while (iterator.hasNext() && rank < topN) {
-            IDSorter idCountPair = iterator.next();
-            result.add((String) dataAlphabet.lookupObject(idCountPair.getID()));
-            rank++;
-        }
-
-        return result;
+    public List<String> getWordsForTopic(int topicId) {
+        return wordsForTopics.get(topicId);
     }
 
-    public List<Double> getWordCoveragesForTopic(int topicId, int topN) {
-        List<Double> result = new ArrayList<>();
+    public List<Double> getWordCoveragesForTopic(int topicId) {
+        return wordCoveragesForTopics.get(topicId);
+    }
 
-        // Get an array of sorted sets of word ID/count pairs
-        ArrayList<TreeSet<IDSorter>> topicSortedWords = ldaModel.getModel().getSortedWords();
-
-        Iterator<IDSorter> iterator = topicSortedWords.get(topicId).iterator();
-
-        double sumWeights = ldaModel.getModel().getSortedWords().get(topicId).stream().mapToDouble(ids -> ids.getWeight()).sum();
-
-        int rank = 0;
-        while (iterator.hasNext() && rank < topN) {
-            IDSorter idCountPair = iterator.next();
-            result.add(new BigDecimal(idCountPair.getWeight()*100/sumWeights).setScale(4, RoundingMode.HALF_UP).doubleValue());
-            rank++;
-        }
-
-        return result;
+    public String getLabel(int topicId) {
+        return topicLabels.get(topicId);
     }
 }

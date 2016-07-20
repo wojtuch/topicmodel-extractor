@@ -2,13 +2,16 @@ package org.dbpedia.topics.inference.service;
 
 import net.sf.json.JSONException;
 import net.sf.json.JSONSerializer;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.dbpedia.topics.inference.Cache;
 import org.dbpedia.topics.inference.Config;
 import org.dbpedia.topics.inference.Inferencer;
 import org.dbpedia.topics.inference.service.models.Prediction;
 import org.dbpedia.topics.inference.service.models.PredictionResponse;
 
-import javax.ws.rs.*;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -34,7 +37,7 @@ public class InferenceService {
         }
         catch (JSONException e) {
             predictionResponse.setStatus("Input must be a valid Spotlight annotation in JSON format!");
-            return Response.status(Response.Status.BAD_REQUEST)
+            return Response.serverError()
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .entity(JSONSerializer.toJSON(predictionResponse).toString())
                     .build();
@@ -47,8 +50,11 @@ public class InferenceService {
             Prediction prediction = new Prediction();
             prediction.setTopicId(i+1);
             prediction.setTopicProbability(predictions[i]);
-            prediction.setTopicWords(inferencer.getWordsForTopic(i, Config.NUM_TOPIC_WORDS));
-            prediction.setTopicWordsCoverage(inferencer.getWordCoveragesForTopic(i, Config.NUM_TOPIC_WORDS));
+            prediction.setTopicWords(inferencer.getWordsForTopic(i));
+            prediction.setTopicWordsCoverage(inferencer.getWordCoveragesForTopic(i));
+            if (inferencer.getLabel(i).length() > 0) {
+                prediction.setTopicLabel(inferencer.getLabel(i));
+            }
             predictionResponse.addPrediction(prediction);
         }
 

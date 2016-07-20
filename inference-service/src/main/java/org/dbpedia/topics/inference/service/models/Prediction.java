@@ -9,6 +9,7 @@ import java.util.List;
 public class Prediction implements Serializable {
     private int topicId;
     private double topicProbability;
+    private String topicLabel;
     private List<String> topicWords;
     private List<Double> topicWordsCoverage;
 
@@ -29,6 +30,14 @@ public class Prediction implements Serializable {
 
     public void setTopicProbability(double topicProbability) {
         this.topicProbability = topicProbability;
+    }
+
+    public String getTopicLabel() {
+        return topicLabel;
+    }
+
+    public void setTopicLabel(String topicLabel) {
+        this.topicLabel = topicLabel;
     }
 
     public List<String> getTopicWords() {
