@@ -1,14 +1,17 @@
 package org.dbpedia.topics;
 
 import org.apache.commons.cli.ParseException;
+import org.apache.xpath.operations.Mod;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.dataset.readers.StreamingReader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
 import org.dbpedia.topics.dataset.readers.impl.WikipediaDumpStreamingReader;
 import org.dbpedia.topics.io.MongoWrapper;
+import org.dbpedia.topics.modelling.HierarchicalLdaModel;
 import org.dbpedia.topics.modelling.LDAInputGenerator;
 import org.dbpedia.topics.modelling.LdaModel;
+import org.dbpedia.topics.modelling.TopicModel;
 import org.dbpedia.topics.pipeline.*;
 import org.dbpedia.topics.pipeline.impl.*;
 import org.dbpedia.topics.rdfencoder.RDFEncoder;
@@ -141,6 +144,19 @@ public class Main {
     }
 
     private static void startTopicModelling(CmdLineOpts opts) throws IOException {
+        String algorithm = opts.getOptionValue(CmdLineOpts.MODELLING_ALGORITHM);
+
+        if (algorithm.equals("lda")) {
+            runLDA(opts);
+        } else if (algorithm.equals("hlda")) {
+            runHLDA(opts);
+        } else {
+            throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
+        }
+    }
+
+    private static void runLDA(CmdLineOpts opts) throws IOException {
+
         String[] features = opts.getOptionValues(CmdLineOpts.FEATURES);
         String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
         int[] numTopicsArr = new int[strNumTopicsArr.length];
@@ -157,7 +173,7 @@ public class Main {
             featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
         }
 
-        String outputDir = "models-abstracts";
+        String outputDir = "models-lda-abstracts";
         new File(outputDir).mkdirs();
 
         for (int numTopics : numTopicsArr) {
@@ -168,13 +184,43 @@ public class Main {
             String outputModelFile = String.format("%s/%d-%s.ser", outputDir, numTopics, featureSetDescriptor);
             ldaModel.saveToFile(outputModelFile);
             String outputCsvFile = String.format("%s/%d-%s.csv", outputDir, numTopics, featureSetDescriptor);
-            ldaModel.describeTopicModel(outputCsvFile, 20);
+            int numTopicDescrWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20"));
+            ldaModel.describeTopicModel(outputCsvFile, numTopicDescrWords);
         }
+    }
+
+    private static void runHLDA(CmdLineOpts opts) throws IOException {
+        String[] features = opts.getOptionValues(CmdLineOpts.FEATURES);
+
+        LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
+        MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
+
+        MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
+        List<String> featureMatrix = new ArrayList<>();
+        for (DBpediaAbstract dbAbstract : iter) {
+            featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
+        }
+
+        String outputDir = "models-hlda-abstracts";
+        new File(outputDir).mkdirs();
+
+        HierarchicalLdaModel hldaModel = new HierarchicalLdaModel(features);
+        hldaModel.createModel(featureMatrix, 1000, Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_LEVELS)));
+
+        String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
+        String outputModelFile = String.format("%s/%s.ser", outputDir, featureSetDescriptor);
+        hldaModel.saveToFile(outputModelFile);
+        String outputCsvFile = String.format("%s/%s.csv", outputDir, featureSetDescriptor);
+        int numTopicDescrWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20"));
+        hldaModel.describeTopicModel(outputCsvFile, numTopicDescrWords);
     }
 
 
     private static void startEncoding(CmdLineOpts opts) throws IOException {
-        Stream<Path> stream = Files.walk(Paths.get("models-abstracts"))
+        String algorithm = opts.getOptionValue(CmdLineOpts.MODELLING_ALGORITHM);
+        String modelDir = opts.getOptionValue(CmdLineOpts.INPUT_DIR);
+
+        Stream<Path> stream = Files.walk(Paths.get(modelDir))
                 .filter(path -> path.toFile().isFile() && path.toString().endsWith("ser"));
 
         String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);

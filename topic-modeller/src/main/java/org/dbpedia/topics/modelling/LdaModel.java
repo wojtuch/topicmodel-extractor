@@ -21,8 +21,7 @@ import java.util.stream.Collectors;
 /**
  * Created by wlu on 26.05.16.
  */
-public class LdaModel implements TopicModel {
-
+public class LdaModel {
     /**
      * defines if
      * words (words)
@@ -89,7 +88,7 @@ public class LdaModel implements TopicModel {
         InstanceList instances = new InstanceList (new SerialPipes(pipeList));
         instances.addThruPipe(new ArrayIterator(input));
 
-        model = new ParallelTopicModel(numTopics, 1.0, 0.01);
+        this.model = new ParallelTopicModel(numTopics, 1.0, 0.01);
         model.addInstances(instances);
         model.setNumThreads(numThreads);
         model.setNumIterations(numIterations);
@@ -149,7 +148,6 @@ public class LdaModel implements TopicModel {
         }
     }
 
-    @Override
     public double[] predict(String text) {
         InstanceList instances = new InstanceList(new SerialPipes(pipeList));
         instances.addThruPipe(new Instance(text, null, "test instance", null));

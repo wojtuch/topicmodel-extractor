@@ -11,8 +11,14 @@ public class CmdLineOpts {
     public static final Option TOPIC_MODELLING = Option.builder("T").longOpt("topic-modelling")
             .desc("Starts the topic modelling. Requires specifying the reader and the finisher.").build();
 
+    public static final Option MODELLING_ALGORITHM = Option.builder("a").longOpt("algorithm")
+            .desc("Which algorithm should be used. Possible values are 'lda' and 'hlda'.").hasArg().argName("algorithm").build();
+
     public static final Option NUM_TOPICS = Option.builder("n").longOpt("num-topics").hasArgs()
-            .desc("How many topics should be mined.").build();
+            .desc("How many topics should be mined. Must be specified when using LDA.").build();
+
+    public static final Option NUM_LEVELS = Option.builder("l").longOpt("num-levels").hasArg()
+            .desc("How many levels should the topic hierarchy have. Must be specified when using hLDA.").build();
 
     public static final Option FEATURES = Option.builder("f").longOpt("features")
             .desc("Which features should be used for topic modelling. Possible values are 'w' (words), 'e' (entities), 't' (types), 'c' (categories), 'h' (hypernyms).")
@@ -29,7 +35,7 @@ public class CmdLineOpts {
             .desc("Which data should the pipeline be run on? Possible values are 'abstracts' and 'wikidump'.").hasArgs().argName("reader").build();
 
     public static final Option FINISHER = Option.builder("F").longOpt("finisher")
-            .desc("How should the pipeline finish. Possible values are 'mongo'.").hasArgs().argName("reader").build();
+            .desc("How should the pipeline finish. Possible values are 'mongo'.").hasArg().argName("reader").build();
 
     public static final Option IN_MEMORY = Option.builder("m").longOpt("in-memory")
             .desc("read the triple files specified in props.properties into memory to provide much faster annotation. be sure to provide sufficient heap size with -Xmx64g")
@@ -37,6 +43,9 @@ public class CmdLineOpts {
 
     public static final Option ENCODE_MINED_TOPICS = Option.builder("E").longOpt("encode")
             .desc("Encode mined topics as RDF.").build();
+
+    public static final Option INPUT_DIR = Option.builder("i").longOpt("input-dir")
+            .desc("Specify the input directory.").hasArg().argName("input directory").build();
 
     public static final Option OUTPUT_FILE = Option.builder("o").longOpt("output-file")
             .desc("Specify the output file.").hasArg().argName("output file").build();
@@ -57,8 +66,8 @@ public class CmdLineOpts {
     private String cmdName = "topic-modeller";
 
     public CmdLineOpts() {
-        Option[] optsArr = new Option[]{TOPIC_MODELLING, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER,
-                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, OUTPUT_FILE, OUTPUT_FORMAT, NUM_TOPIC_WORDS, HELP};
+        Option[] optsArr = new Option[]{TOPIC_MODELLING, MODELLING_ALGORITHM, NUM_LEVELS, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER,
+                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT_DIR, OUTPUT_FILE, OUTPUT_FORMAT, NUM_TOPIC_WORDS, HELP};
         for (Option option : optsArr) {
             this.options.addOption(option);
         }
