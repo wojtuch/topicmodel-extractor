@@ -53,6 +53,7 @@ public class StreamingPipeline implements IPipeline {
         }
 
         dataset.forEach(instance -> {
+            System.out.print(".");
             for (PipelineTask pipelineTask : pipelineTasks) {
                 pipelineTask.processInstance(instance);
             }

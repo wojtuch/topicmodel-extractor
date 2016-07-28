@@ -15,7 +15,7 @@ public class Config {
     public static String TYPES_TRIPLE_FILE;
     public static String CATEGORIES_TRIPLE_FILE;
     public static String ABSTRACTS_TRIPLE_FILE;
-    public static String READABLE_WIKI;
+    public static String WIKI_AS_XML_FOLDER;
     public static String MONGO_SERVER;
     public static int MONGO_PORT;
     public static String MONGO_DB;
@@ -33,7 +33,7 @@ public class Config {
             TYPES_TRIPLE_FILE = properties.getProperty("types_triple_file");
             CATEGORIES_TRIPLE_FILE = properties.getProperty("categories_triple_file");
             ABSTRACTS_TRIPLE_FILE = properties.getProperty("abstracts_triple_file");
-            READABLE_WIKI = properties.getProperty("readable_wiki_file");
+            WIKI_AS_XML_FOLDER = properties.getProperty("wiki_as_xml_folder");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,6 +1,7 @@
 package org.dbpedia.topics;
 
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
+import org.dbpedia.topics.dataset.readers.impl.WikipediaDumpStreamingReader;
 import org.dbpedia.topics.io.MongoWrapper;
 import org.dbpedia.topics.utils.ArticleCleaner;
 import org.dbpedia.topics.utils.Utils;
@@ -12,18 +13,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * Created by wlu on 15.06.16.
  */
 public class Testing {
     public static void main(String[] args) {
-        try {
-            Files.lines(Paths.get("/media/data/datasets/gsoc/enwiki-latest.lines")).limit(1)
-                    .map(line -> ArticleCleaner.replaceLinks(line)).forEach(System.out::println);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        System.out.println(new WikipediaDumpStreamingReader(Config.WIKI_AS_XML_FOLDER).readDataset().collect(Collectors.toList()).size());
     }
 
     private static void testMongo(){

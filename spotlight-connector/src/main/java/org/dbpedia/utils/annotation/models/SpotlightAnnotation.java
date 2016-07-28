@@ -91,6 +91,6 @@ public class SpotlightAnnotation implements Serializable {
     }
 
     public boolean isEmpty() {
-        return policy == null;
+        return resources.isEmpty();
     }
 }

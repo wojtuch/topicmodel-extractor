@@ -17,7 +17,7 @@ public class CmdLineOpts {
     public static final Option NUM_TOPICS = Option.builder("n").longOpt("num-topics").hasArgs()
             .desc("How many topics should be mined. Must be specified when using LDA.").build();
 
-    public static final Option NUM_LEVELS = Option.builder("l").longOpt("num-levels").hasArg()
+    public static final Option NUM_LEVELS = Option.builder("l").longOpt("num-levels").hasArgs()
             .desc("How many levels should the topic hierarchy have. Must be specified when using hLDA.").build();
 
     public static final Option FEATURES = Option.builder("f").longOpt("features")
@@ -35,7 +35,7 @@ public class CmdLineOpts {
             .desc("Which data should the pipeline be run on? Possible values are 'abstracts' and 'wikidump'.").hasArgs().argName("reader").build();
 
     public static final Option FINISHER = Option.builder("F").longOpt("finisher")
-            .desc("How should the pipeline finish. Possible values are 'mongo'.").hasArg().argName("reader").build();
+            .desc("How should the pipeline finish. Possible values are 'mongo'.").hasArg().argName("finisher").build();
 
     public static final Option IN_MEMORY = Option.builder("m").longOpt("in-memory")
             .desc("read the triple files specified in props.properties into memory to provide much faster annotation. be sure to provide sufficient heap size with -Xmx64g")
@@ -59,6 +59,10 @@ public class CmdLineOpts {
             .desc("Using how many words should a topic be described?")
             .hasArg().argName("number words").build();
 
+    public static final Option DONT_STORE_TEXT = Option.builder("nt").longOpt("no-texts")
+            .desc("Don't store texts after the preprocessing pipeline. Might make sense to use with long wikipedia" +
+                    " articles that make MongoDB communication very slow.").build();
+
     public static final Option HELP = Option.builder("h").longOpt("help").desc("Shows this message.").build();
 
     private Options options = new Options();
@@ -67,7 +71,7 @@ public class CmdLineOpts {
 
     public CmdLineOpts() {
         Option[] optsArr = new Option[]{TOPIC_MODELLING, MODELLING_ALGORITHM, NUM_LEVELS, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER,
-                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT_DIR, OUTPUT_FILE, OUTPUT_FORMAT, NUM_TOPIC_WORDS, HELP};
+                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT_DIR, OUTPUT_FILE, OUTPUT_FORMAT, NUM_TOPIC_WORDS, DONT_STORE_TEXT, HELP};
         for (Option option : optsArr) {
             this.options.addOption(option);
         }

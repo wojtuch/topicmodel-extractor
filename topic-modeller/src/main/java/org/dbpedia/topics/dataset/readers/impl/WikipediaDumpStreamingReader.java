@@ -6,10 +6,16 @@ import org.dbpedia.topics.dataset.readers.StreamingReader;
 import org.dbpedia.topics.utils.ArticleCleaner;
 import org.idio.wikipedia.dumps.EnglishWikipediaPage;
 import org.idio.wikipedia.dumps.WikipediaPage;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -17,38 +23,47 @@ import java.util.stream.Stream;
  */
 public class WikipediaDumpStreamingReader extends StreamingReader {
 
-    private String pathToReadableWiki;
+    private String pathToWikiXmlFolder;
 
-    public WikipediaDumpStreamingReader(String pathToReadableWiki) {
-        this.pathToReadableWiki = pathToReadableWiki;
+    public WikipediaDumpStreamingReader(String pathToWikiXmlFolder) {
+        this.pathToWikiXmlFolder = pathToWikiXmlFolder;
     }
 
     @Override
     public Stream<Instance> readDataset() {
-        Stream<Instance> result = Stream.of();
-
+        Stream<Instance> result = Stream.empty();
+        Stream<Path> paths = Stream.empty();
         try {
-            Stream<String> lines = Files.lines(Paths.get(pathToReadableWiki))
-                    .skip(1)
-                    .limit(1);
-            Stream<String[]> titleText = lines.map(line -> {
-                String[] splitByTab = line.split("\t",2);
-                return splitByTab;
-            });
-
-            titleText = replaceLinksForIds(titleText);
-            titleText = cleanArticles(titleText);
-            result = titleText
-                    .filter(tt -> !tt[1].equals("null"))
-                    .map(tt -> {
-                        Instance article = new WikipediaArticle();
-                        article.setText(tt[1]);
-                        article.setUri(tt[0]);
-                        return article;
-                    });
+            paths = Files.walk(Paths.get(pathToWikiXmlFolder))
+                    .filter(path -> !Files.isDirectory(path));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        result = readWikiArticlesFromXmlFiles(paths);
+
+//        try {
+//            Stream<String> lines = Files.lines(Paths.get(pathToWikiXmlFolder))
+//                    .skip(1)
+//                    .limit(1);
+//            Stream<String[]> titleText = lines.map(line -> {
+//                String[] splitByTab = line.split("\t",2);
+//                return splitByTab;
+//            });
+//
+//            titleText = replaceLinksForIds(titleText);
+//            titleText = cleanArticles(titleText);
+//            result = titleText
+//                    .filter(tt -> !tt[1].equals("null"))
+//                    .map(tt -> {
+//                        Instance article = new WikipediaArticle();
+//                        article.setText(tt[1]);
+//                        article.setUri(tt[0]);
+//                        return article;
+//                    });
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         return result;
     }
@@ -75,5 +90,36 @@ public class WikipediaDumpStreamingReader extends StreamingReader {
         });
 
         return titleTextStream;
+    }
+
+    private Stream<Instance> readWikiArticlesFromXmlFiles(Stream<Path> paths) {
+        Stream<Instance> result = paths
+                .map(path -> parseXmlWikiextractorFile(path))
+                .flatMap(list -> list.stream());
+
+        return result;
+    }
+
+    private List<Instance> parseXmlWikiextractorFile(Path path) {
+        List<Instance> result = new ArrayList<>();
+        Document doc = new Document("");
+
+        try {
+            doc = Jsoup.parse(path.toFile(), "utf-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return result;
+        }
+
+        for (Element element : doc.getElementsByTag("doc")) {
+            String url = element.attr("url");
+            String text = element.text();
+            Instance wikiPage = new WikipediaArticle();
+            wikiPage.setText(text);
+            wikiPage.setUri(url);
+            result.add(wikiPage);
+        }
+
+        return result;
     }
 }

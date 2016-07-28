@@ -3,13 +3,17 @@ package org.dbpedia.topics.modelling;
 import cc.mallet.pipe.*;
 import cc.mallet.pipe.iterator.ArrayIterator;
 import cc.mallet.topics.HierarchicalLDA;
+import cc.mallet.topics.HierarchicalLdaUtils;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import cc.mallet.util.Randoms;
+import org.dbpedia.topics.Config;
 import org.dbpedia.topics.Constants;
 import org.dbpedia.topics.io.StopWords;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +38,9 @@ public class HierarchicalLdaModel {
     private List<String> features;
 
     private HierarchicalLDA hierarchicalLDAModel;
-    private ArrayList<Pipe> pipeList;
+    private List<Pipe> pipeList = new ArrayList<>();
+
+    private int numWords = 15;
 
     private String[] blacklistEntities = new String[]{
     };
@@ -55,9 +61,6 @@ public class HierarchicalLdaModel {
 
     public HierarchicalLdaModel(String... topicModes) {
         this.features = Arrays.asList(topicModes).stream().filter(t -> t!=null).collect(Collectors.toList());
-        hierarchicalLDAModel = new HierarchicalLDA();
-        hierarchicalLDAModel.setTopicDisplay(50, 15);
-        hierarchicalLDAModel.setProgressDisplay(true);
 
         TokenSequenceRemoveStopwords tsrs = new TokenSequenceRemoveStopwords();
         tsrs.setCaseSensitive(true);
@@ -92,11 +95,13 @@ public class HierarchicalLdaModel {
     }
 
     public void createModel(List<String> input, int numIterations, int numLevels) throws IOException {
-
         InstanceList trainInstances = new InstanceList (new SerialPipes(pipeList));
         trainInstances.addThruPipe(new ArrayIterator(input));
         InstanceList testInstances = null;
 
+        hierarchicalLDAModel = new HierarchicalLDA();
+        hierarchicalLDAModel.setTopicDisplay(50, numWords);
+        hierarchicalLDAModel.setProgressDisplay(true);
         hierarchicalLDAModel.initialize(trainInstances, testInstances, numLevels, new Randoms());
         hierarchicalLDAModel.estimate(numIterations);
     }
@@ -113,8 +118,17 @@ public class HierarchicalLdaModel {
         }
     }
 
-    public void describeTopicModel(String outputFilename, int numTopicDescribingWords) throws IOException {
+    public void describeTopicModel(String outputFilename) throws IOException {
+        HierarchicalLdaUtils utils = new HierarchicalLdaUtils(hierarchicalLDAModel);
+        String hierarchyDescription = utils.nodesAsString();
+        Files.write(Paths.get(outputFilename), hierarchyDescription.getBytes());
+    }
 
+    public int getNumWords() {
+        return numWords;
+    }
 
+    public void setNumWords(int numWords) {
+        this.numWords = numWords;
     }
 }
