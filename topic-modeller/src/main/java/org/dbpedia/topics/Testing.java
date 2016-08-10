@@ -3,16 +3,11 @@ package org.dbpedia.topics;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.readers.impl.WikipediaDumpStreamingReader;
 import org.dbpedia.topics.io.MongoWrapper;
-import org.dbpedia.topics.utils.ArticleCleaner;
 import org.dbpedia.topics.utils.Utils;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 /**
