@@ -44,7 +44,6 @@
     </build>
 
     <dependencies>
-
         <dependency>
             <groupId>org.dbpedia.utils</groupId>
             <artifactId>spotlight-sparql-connector</artifactId>
@@ -71,14 +70,12 @@
             <version>1.4.01</version>
         </dependency>
 
-
         <!-- http://mvnrepository.com/artifact/edu.stanford.nlp/stanford-corenlp -->
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
             <version>3.6.0</version>
         </dependency>
-
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
@@ -91,27 +88,6 @@
             <groupId>cc.mallet</groupId>
             <artifactId>mallet</artifactId>
             <version>2.0.8</version>
-        </dependency>
-
-        <!-- http://mvnrepository.com/artifact/org.sweble.wikitext/swc-engine -->
-        <dependency>
-            <groupId>org.sweble.wikitext</groupId>
-            <artifactId>swc-engine</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
-        <!-- http://mvnrepository.com/artifact/org.sweble.wikitext/swc-article-cruncher -->
-        <dependency>
-            <groupId>org.sweble.wikitext</groupId>
-            <artifactId>swc-article-cruncher</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
-        <!-- http://mvnrepository.com/artifact/org.sweble.wikitext/swc-dumpreader -->
-        <dependency>
-            <groupId>org.sweble.wikitext</groupId>
-            <artifactId>swc-example-dumpcruncher</artifactId>
-            <version>2.1.0</version>
         </dependency>
 
         <!-- http://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->

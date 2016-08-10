@@ -5,7 +5,7 @@ import org.apache.commons.cli.*;
 /**
  * Created by wlu on 26.05.16.
  */
-public class CmdLineOpts {
+class CmdLineOpts {
 
 
     public static final Option TOPIC_MODELLING = Option.builder("T").longOpt("topic-modelling")
