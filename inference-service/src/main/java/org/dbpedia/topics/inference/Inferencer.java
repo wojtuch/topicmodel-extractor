@@ -5,12 +5,14 @@ import org.dbpedia.topics.inference.service.models.InputToDataset;
 import org.dbpedia.topics.modelling.LDAInputGenerator;
 import org.dbpedia.topics.modelling.LdaModel;
 import org.dbpedia.topics.pipeline.Pipeline;
+import org.dbpedia.topics.pipeline.PipelineTask;
 import org.dbpedia.topics.pipeline.impl.FindCategoriesInMemoryTask;
 import org.dbpedia.topics.pipeline.impl.FindHypernymsInMemoryTask;
 import org.dbpedia.topics.pipeline.impl.FindLemmasTask;
 import org.dbpedia.topics.pipeline.impl.FindTypesInMemoryTask;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -29,19 +31,32 @@ public class Inferencer {
         return instance;
     }
 
-    public Inferencer(String[] features) {
+    /**
+     * Method for convenience. Once the instance of this Singleton has been instantiated, instead of calling long
+     * getInferencer(String[] features) method, you can just call this one.
+     * @return
+     */
+    public static Inferencer getInferencer() {
+        if (instance == null) {
+            throw new RuntimeException("You must first call getInferencer(String[] features) method!");
+        }
+
+        return instance;
+    }
+
+    private Inferencer(String[] features) {
         ldaModel = new LdaModel(features);
         inputGenerator = new LDAInputGenerator(features);
-        findHypernymsTask = new FindHypernymsInMemoryTask(Config.HYPERNYMS_TRIPLE_FILE);
-//        findTypesTask = new FindTypesInMemoryTask(Config.TYPES_TRIPLE_FILE);
-//        findCategories = new FindCategoriesInMemoryTask(Config.CATEGORIES_TRIPLE_FILE);
+        this.features = Arrays.asList(features);
     }
 
     private LdaModel ldaModel;
     private LDAInputGenerator inputGenerator;
-    private FindHypernymsInMemoryTask findHypernymsTask;
-    private FindTypesInMemoryTask findTypesTask;
-    private FindCategoriesInMemoryTask findCategories;
+    private PipelineTask findHypernymsTask;
+    private PipelineTask findTypesTask;
+    private PipelineTask findCategoriesTask;
+    private List<String> features;
+
     private Map<Integer, List<String>> wordsForTopics;
     private Map<Integer, List<Double>> wordCoveragesForTopics;
     private List<String> topicLabels;
@@ -55,12 +70,28 @@ public class Inferencer {
         topicLabels = Cache.getTopicLabels(ldaModel);
     }
 
+    public void createInMemoryTasks(String typesFile, String categoriesFile, String hypernymsFile) {
+        findTypesTask = new FindTypesInMemoryTask(typesFile);
+        findCategoriesTask = new FindCategoriesInMemoryTask(categoriesFile);
+        findHypernymsTask = new FindHypernymsInMemoryTask(hypernymsFile);
+    }
+
     public double[] predictTopicCoverage(String spotlightAnnotation) {
         InputToDataset reader = new InputToDataset(spotlightAnnotation);
         EmptyFinisher finisher = new EmptyFinisher();
         Pipeline pipeline = new Pipeline(reader, finisher);
-        pipeline.addTask(new FindLemmasTask());
-        pipeline.addTask(findHypernymsTask);
+        if (features.contains("w")) {
+            pipeline.addTask(new FindLemmasTask());
+        }
+        if (features.contains("t")) {
+            pipeline.addTask(findTypesTask);
+        }
+        if (features.contains("c")) {
+            pipeline.addTask(findCategoriesTask);
+        }
+        if (features.contains("h")) {
+            pipeline.addTask(findHypernymsTask);
+        }
         pipeline.doWork();
         String featureVec = inputGenerator.generateFeatureVector(finisher.getProcessedInstance());
         double[] prediction = ldaModel.predict(featureVec);

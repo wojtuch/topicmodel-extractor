@@ -2,7 +2,6 @@ package org.dbpedia.topics.inference.service;
 
 import net.sf.json.JSONException;
 import net.sf.json.JSONSerializer;
-import org.dbpedia.topics.inference.Config;
 import org.dbpedia.topics.inference.Inferencer;
 import org.dbpedia.topics.inference.service.models.Prediction;
 import org.dbpedia.topics.inference.service.models.PredictionResponse;
@@ -23,7 +22,7 @@ public class InferenceService {
      * Method handling HTTP GET requests. The returned object will be sent
      * to the client as "text/plain" media type.
      *
-     * @return String that will be returned as a text/plain response.
+     * @return String that will be returned as a application/json response.
      */
     @POST
     @Path("get-topics")
@@ -33,6 +32,7 @@ public class InferenceService {
         PredictionResponse predictionResponse = new PredictionResponse();
         try {
             JSONSerializer.toJSON(spotlightAnnotationJSON);
+            System.out.println("JSON WORKS");
         }
         catch (JSONException e) {
             predictionResponse.setStatus("Input must be a valid Spotlight annotation in JSON format!");
@@ -42,8 +42,15 @@ public class InferenceService {
                     .build();
         }
 
-        Inferencer inferencer = Inferencer.getInferencer(Config.INFERENCER_FEATURES);
-        double[] predictions = inferencer.predictTopicCoverage(spotlightAnnotationJSON);
+        Inferencer inferencer = Inferencer.getInferencer();
+        double[] predictions = new double[0];
+        try {
+            predictions = inferencer.predictTopicCoverage(spotlightAnnotationJSON);
+        }
+        catch (Exception e) {
+            System.err.println("Unable to predict topic coverage... " + e.getMessage());
+            e.printStackTrace();
+        }
 
         for (int i = 0; i < predictions.length; i++) {
             Prediction prediction = new Prediction();
