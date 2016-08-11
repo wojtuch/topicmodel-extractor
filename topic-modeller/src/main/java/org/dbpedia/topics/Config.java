@@ -19,6 +19,9 @@ public class Config {
     public static String MONGO_SERVER;
     public static int MONGO_PORT;
     public static String MONGO_DB;
+    public static String ELASTIC_SERVER;
+    public static int ELASTIC_PORT;
+    public static String ELASTIC_INDEX;
     static {
         try {
             Properties properties = new Properties();
@@ -34,6 +37,9 @@ public class Config {
             CATEGORIES_TRIPLE_FILE = properties.getProperty("categories_triple_file");
             ABSTRACTS_TRIPLE_FILE = properties.getProperty("abstracts_triple_file");
             WIKI_AS_XML_FOLDER = properties.getProperty("wiki_as_xml_folder");
+            ELASTIC_SERVER = properties.getProperty("elastic_server", "localhost");
+            ELASTIC_PORT = Integer.parseInt(properties.getProperty("elastic_port", "9300"));
+            ELASTIC_INDEX = properties.getProperty("elastic_index", "gsoc");
         } catch (IOException e) {
             e.printStackTrace();
         }

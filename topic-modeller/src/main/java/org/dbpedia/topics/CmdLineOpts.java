@@ -6,8 +6,6 @@ import org.apache.commons.cli.*;
  * Created by wlu on 26.05.16.
  */
 class CmdLineOpts {
-
-
     public static final Option TOPIC_MODELLING = Option.builder("T").longOpt("topic-modelling")
             .desc("Starts the topic modelling. Requires specifying the reader and the finisher.").build();
 
@@ -25,7 +23,7 @@ class CmdLineOpts {
             .numberOfArgs(5).hasArgs().argName("features...").build();
 
     public static final Option PREPROCESSING_PIPELINE = Option.builder("P").longOpt("preprocessing")
-            .desc("Starts the pipeline to prepare documents for topic modelling. Requires specifying the reader, the tasks and the finisher.").build();
+            .desc("Starts the pipeline to prepare documents for topic modelling. Requires specifying the reader and the finisher.").build();
 
     public static final Option TASKS = Option.builder("t").longOpt("tasks")
             .desc("Which tasks should the pipeline perform. Possible values are 'lemma', 'annotate' [using Spotlight], 'types', 'categories', 'hypernyms'.")
@@ -35,7 +33,7 @@ class CmdLineOpts {
             .desc("Which data should the pipeline be run on? Possible values are 'abstracts' and 'wikidump'.").hasArgs().argName("reader").build();
 
     public static final Option FINISHER = Option.builder("F").longOpt("finisher")
-            .desc("How should the pipeline finish. Possible values are 'mongo'.").hasArg().argName("finisher").build();
+            .desc("How should the pipeline finish. Possible values are 'mongo' or 'disc'.").hasArg().argName("finisher").build();
 
     public static final Option IN_MEMORY = Option.builder("m").longOpt("in-memory")
             .desc("read the triple files specified in props.properties into memory to provide much faster annotation. be sure to provide sufficient heap size with -Xmx64g")
@@ -47,8 +45,8 @@ class CmdLineOpts {
     public static final Option INPUT_DIR = Option.builder("i").longOpt("input-dir")
             .desc("Specify the input directory.").hasArg().argName("input directory").build();
 
-    public static final Option OUTPUT_FILE = Option.builder("o").longOpt("output-file")
-            .desc("Specify the output file.").hasArg().argName("output file").build();
+    public static final Option OUTPUT = Option.builder("o").longOpt("output")
+            .desc("Specify the output file / directory.").hasArg().argName("output").build();
 
     public static final Option OUTPUT_FORMAT = Option.builder("of").longOpt("output-format")
             .desc("Specify the output format. For accepted jena formats see:" +
@@ -63,6 +61,15 @@ class CmdLineOpts {
             .desc("Don't store texts after the preprocessing pipeline. Might make sense to use with long wikipedia" +
                     " articles that make MongoDB communication very slow.").build();
 
+    public static final Option DUMP_MONGO = Option.builder("dm").longOpt("dump-mongo")
+            .desc("Read the documents from mongo and store them on disc in chunks of specified size in the specified output dir.").build();
+
+    public static final Option CHUNK_SIZE = Option.builder("cs").longOpt("chunk-size")
+            .desc("Size of the chunk.").build();
+
+    public static final Option IMPORT_ELASTIC = Option.builder("ie").longOpt("import-to-elastic")
+            .desc("Reads the mongo dump and inserts the document to elastic search.").build();
+
     public static final Option HELP = Option.builder("h").longOpt("help").desc("Shows this message.").build();
 
     private Options options = new Options();
@@ -70,8 +77,10 @@ class CmdLineOpts {
     private String cmdName = "topic-modeller";
 
     public CmdLineOpts() {
-        Option[] optsArr = new Option[]{TOPIC_MODELLING, MODELLING_ALGORITHM, NUM_LEVELS, NUM_TOPICS, FEATURES, PREPROCESSING_PIPELINE, TASKS, READER,
-                FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT_DIR, OUTPUT_FILE, OUTPUT_FORMAT, NUM_TOPIC_WORDS, DONT_STORE_TEXT, HELP};
+        Option[] optsArr = new Option[]{TOPIC_MODELLING, MODELLING_ALGORITHM, NUM_LEVELS, NUM_TOPICS, FEATURES,
+                PREPROCESSING_PIPELINE, TASKS, READER, FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT_DIR,
+                OUTPUT, OUTPUT_FORMAT, NUM_TOPIC_WORDS, DONT_STORE_TEXT, DUMP_MONGO, CHUNK_SIZE, IMPORT_ELASTIC,
+                HELP};
         for (Option option : optsArr) {
             this.options.addOption(option);
         }

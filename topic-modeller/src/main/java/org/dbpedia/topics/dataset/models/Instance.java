@@ -7,6 +7,7 @@ import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Indexed;
 import org.mongodb.morphia.annotations.Property;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +15,7 @@ import java.util.List;
  * Representation of the single document used for topic modelling.
  * Created by wlu on 26.05.16.
  */
-public abstract class Instance {
+public abstract class Instance implements Serializable {
     @Property
     protected String text;
     @Indexed(unique = true)

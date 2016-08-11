@@ -1,6 +1,7 @@
 package org.dbpedia.topics;
 
 import org.apache.commons.cli.ParseException;
+import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.dataset.readers.StreamingReader;
@@ -16,8 +17,7 @@ import org.dbpedia.topics.rdfencoder.RDFEncoder;
 import org.dbpedia.topics.utils.Utils;
 import org.mongodb.morphia.query.MorphiaIterator;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +32,6 @@ import java.util.stream.Stream;
  * Created by wlu on 26.05.16.
  */
 public class Main {
-
     public static void main(String[] args) throws URISyntaxException, IOException {
         CmdLineOpts opts = new CmdLineOpts();
 
@@ -67,6 +66,14 @@ public class Main {
         else if  (opts.hasOption(CmdLineOpts.ENCODE_MINED_TOPICS)) {
             System.out.println("Starting the encoder");
             startEncoding(opts);
+        }
+        else if (opts.hasOption(CmdLineOpts.DUMP_MONGO)) {
+            System.out.println("Dump mongo to disc");
+            startDump(opts);
+        }
+        else if (opts.hasOption(CmdLineOpts.IMPORT_ELASTIC)) {
+            System.out.println("Import to elastic");
+            startElasticImport(opts);
         }
         else {
             opts.printHelp();
@@ -225,7 +232,6 @@ public class Main {
         }
     }
 
-
     private static void startEncoding(CmdLineOpts opts) throws IOException {
         String algorithm = opts.getOptionValue(CmdLineOpts.MODELLING_ALGORITHM);
         String modelDir = opts.getOptionValue(CmdLineOpts.INPUT_DIR);
@@ -234,7 +240,7 @@ public class Main {
                 .filter(path -> path.toFile().isFile() && path.toString().endsWith("ser"));
 
         String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
-        String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT_FILE);
+        String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT);
         String outputFormat = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT, "NT");
         int numDescribingWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "10"));
 
@@ -286,6 +292,69 @@ public class Main {
                 }
             }
         });
+    }
+
+    private static void startDump(CmdLineOpts opts) throws IOException {
+        String outputDirStr = opts.getOptionValue(CmdLineOpts.OUTPUT);
+        new File(outputDirStr).mkdirs();
+        MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
+        String readerStr = opts.getOptionValue(CmdLineOpts.READER);
+        System.out.println("Saving dump to " + outputDirStr);
+        int partitionSize = Integer.parseInt(opts.getOptionValue(CmdLineOpts.CHUNK_SIZE, "250000"));
+        List<Instance> dump = new ArrayList<>(partitionSize);
+        int ct = 0;
+        int part = 0;
+        if (readerStr.equals("abstracts")) {
+            MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
+            for (DBpediaAbstract dbAbstract : iter) {
+                if (++ct % 25000 == 0) {
+                    System.out.println(ct);
+                }
+                dump.add(dbAbstract);
+                if (dump.size() == partitionSize) {
+                    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(outputDirStr, (part++)+".ser")))) {
+                        oos.writeObject(dump);
+                    }
+                    dump.clear();
+                }
+            }
+        } else if (readerStr.equals("wikidump")) {
+            throw new IllegalArgumentException("Not yet implemented: " + readerStr);
+        } else {
+            throw new IllegalArgumentException("Unknown reader: " + readerStr);
+        }
+
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(outputDirStr, (part++)+".ser")))) {
+            oos.writeObject(dump);
+        }
+    }
+
+    private static void startElasticImport(CmdLineOpts opts) throws IOException {
+        Path inputDir = Paths.get(opts.getOptionValue(CmdLineOpts.INPUT_DIR)).toAbsolutePath();
+        System.out.println("Reading dump from " + inputDir.toString());
+
+        ElasticSearchWorker elasticSearchWorker = new ElasticSearchWorker(Config.ELASTIC_SERVER, Config.ELASTIC_PORT);
+
+        try {
+            Files.walk(inputDir).filter(Files::isRegularFile).forEach(path -> {
+                System.out.println("Reading " + path.toAbsolutePath().toString());
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path.toFile()))) {
+                    List<Instance> docs = (List<Instance>) ois.readObject();
+                    System.out.println(String.format("Inserting %d documents", docs.size()));
+                    elasticSearchWorker.insertInstances(docs, "abstracts");
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        finally {
+            elasticSearchWorker.close();
+        }
     }
 
     private static void multiThreadedPipeline(int numWorkers) throws URISyntaxException {
