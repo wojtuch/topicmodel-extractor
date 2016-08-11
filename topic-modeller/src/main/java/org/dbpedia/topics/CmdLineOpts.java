@@ -42,8 +42,8 @@ class CmdLineOpts {
     public static final Option ENCODE_MINED_TOPICS = Option.builder("E").longOpt("encode")
             .desc("Encode mined topics as RDF.").build();
 
-    public static final Option INPUT_DIR = Option.builder("i").longOpt("input-dir")
-            .desc("Specify the input directory.").hasArg().argName("input directory").build();
+    public static final Option INPUT = Option.builder("i").longOpt("input")
+            .desc("Specify the input file / directory.").hasArg().argName("input").build();
 
     public static final Option OUTPUT = Option.builder("o").longOpt("output")
             .desc("Specify the output file / directory.").hasArg().argName("output").build();
@@ -78,7 +78,7 @@ class CmdLineOpts {
 
     public CmdLineOpts() {
         Option[] optsArr = new Option[]{TOPIC_MODELLING, MODELLING_ALGORITHM, NUM_LEVELS, NUM_TOPICS, FEATURES,
-                PREPROCESSING_PIPELINE, TASKS, READER, FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT_DIR,
+                PREPROCESSING_PIPELINE, TASKS, READER, FINISHER, IN_MEMORY, ENCODE_MINED_TOPICS, INPUT,
                 OUTPUT, OUTPUT_FORMAT, NUM_TOPIC_WORDS, DONT_STORE_TEXT, DUMP_MONGO, CHUNK_SIZE, IMPORT_ELASTIC,
                 HELP};
         for (Option option : optsArr) {

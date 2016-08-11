@@ -234,7 +234,7 @@ public class Main {
 
     private static void startEncoding(CmdLineOpts opts) throws IOException {
         String algorithm = opts.getOptionValue(CmdLineOpts.MODELLING_ALGORITHM);
-        String modelDir = opts.getOptionValue(CmdLineOpts.INPUT_DIR);
+        String modelDir = opts.getOptionValue(CmdLineOpts.INPUT);
 
         Stream<Path> stream = Files.walk(Paths.get(modelDir))
                 .filter(path -> path.toFile().isFile() && path.toString().endsWith("ser"));
@@ -331,7 +331,7 @@ public class Main {
     }
 
     private static void startElasticImport(CmdLineOpts opts) throws IOException {
-        Path inputDir = Paths.get(opts.getOptionValue(CmdLineOpts.INPUT_DIR)).toAbsolutePath();
+        Path inputDir = Paths.get(opts.getOptionValue(CmdLineOpts.INPUT)).toAbsolutePath();
         System.out.println("Reading dump from " + inputDir.toString());
 
         ElasticSearchWorker elasticSearchWorker = new ElasticSearchWorker(Config.ELASTIC_SERVER, Config.ELASTIC_PORT);
