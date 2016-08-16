@@ -182,12 +182,12 @@ public class Main {
             featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
         }
 
-        String outputDir = "models-lda-abstracts";
+        String outputDir = opts.getOptionValue(CmdLineOpts.OUTPUT);
         new File(outputDir).mkdirs();
 
         for (int numTopics : numTopicsArr) {
             LdaModel ldaModel = new LdaModel(features);
-            ldaModel.createModel(featureMatrix, numTopics, 1000, 16);
+            ldaModel.createModel(featureMatrix, numTopics, Config.LDA_NUM_ITERATIONS, Config.LDA_NUM_THREADS);
 
             String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
             String outputModelFile = String.format("%s/%d-%s.ser", outputDir, numTopics, featureSetDescriptor);
@@ -210,7 +210,7 @@ public class Main {
             featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
         }
 
-        String outputDir = "models-hlda-abstracts";
+        String outputDir = opts.getOptionValue(CmdLineOpts.OUTPUT);
         new File(outputDir).mkdirs();
 
         String[] strNumLevelsArr = opts.getOptionValues(CmdLineOpts.NUM_LEVELS);
@@ -222,7 +222,7 @@ public class Main {
         for (int numLevels : numLevelsArr) {
             HierarchicalLdaModel hldaModel = new HierarchicalLdaModel(features);
             hldaModel.setNumWords(Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20")));
-            hldaModel.createModel(featureMatrix, 1000, numLevels);
+            hldaModel.createModel(featureMatrix, Config.LDA_NUM_ITERATIONS, numLevels);
 
             String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
             String outputModelFile = String.format("%s/%s.ser", outputDir, featureSetDescriptor);
@@ -233,65 +233,45 @@ public class Main {
     }
 
     private static void startEncoding(CmdLineOpts opts) throws IOException {
-        String algorithm = opts.getOptionValue(CmdLineOpts.MODELLING_ALGORITHM);
-        String modelDir = opts.getOptionValue(CmdLineOpts.INPUT);
+        Path modelPath = Paths.get(opts.getOptionValue(CmdLineOpts.INPUT));
 
-        Stream<Path> stream = Files.walk(Paths.get(modelDir))
-                .filter(path -> path.toFile().isFile() && path.toString().endsWith("ser"));
-
-        String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
         String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT);
         String outputFormat = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT, "NT");
         int numDescribingWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "10"));
 
-        if (strNumTopicsArr != null) {
-            stream = stream.filter(path -> {
-                String filename = path.getFileName().toString();
-                for (String s : strNumTopicsArr) {
-                    if (filename.startsWith(s+"-")) {
-                        return true;
-                    }
-                }
-
-                return false;
-            });
-        }
-
         MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
 
-        stream.forEach(path -> {
-            String filenameNoExt = path.getFileName().toString().replace(".ser", "");
-            String[] features = filenameNoExt.split("-", 2)[1].split("-");
-            LdaModel ldaModel = new LdaModel(features);
+        String filenameNoExt = modelPath.getFileName().toString().replace(".ser", "");
+        String[] features = filenameNoExt.split("-", 2)[1].split("-");
+        LdaModel ldaModel = new LdaModel(features);
+        try {
+            ldaModel.readFromFile(modelPath.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        RDFEncoder encoder = new RDFEncoder(ldaModel);
+        encoder.encodeTopics(numDescribingWords);
+
+        LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
+        MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class, 10);
+        for (DBpediaAbstract dbAbstract : iter) {
+            String input = inputGenerator.generateFeatureVector(dbAbstract);
+            encoder.encodeOneObservation(dbAbstract.getUri(), input);
+        }
+
+        if (outputFile == null) {
+            System.out.println(encoder.toString(outputFormat));
+        }
+        else {
             try {
-                ldaModel.readFromFile(path.toString());
+                Files.write(Paths.get(outputFile), encoder.toString(outputFormat).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
             }
-
-            RDFEncoder encoder = new RDFEncoder(ldaModel);
-            encoder.encodeTopics(numDescribingWords);
-
-            LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
-            MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
-            for (DBpediaAbstract dbAbstract : iter) {
-                String input = inputGenerator.generateFeatureVector(dbAbstract);
-                encoder.encodeOneObservation(dbAbstract.getUri(), input);
-            }
-
-            if (outputFile == null) {
-                System.out.println(encoder.toString(outputFormat));
-            }
-            else {
-                try {
-                    Files.write(Paths.get(outputFile), encoder.toString(outputFormat).getBytes());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        }
     }
 
     private static void startDump(CmdLineOpts opts) throws IOException {
@@ -354,31 +334,6 @@ public class Main {
         }
         finally {
             elasticSearchWorker.close();
-        }
-    }
-
-    private static void multiThreadedPipeline(int numWorkers) throws URISyntaxException {
-        long numLines = Utils.getNumberOfLines("/media/data/datasets/gsoc/long_abstracts_en.ttl");
-        long batchSize = numLines/numWorkers;
-
-        for (int i = 0; i < numWorkers; i++) {
-            long start = batchSize*i;
-            long end = i == numWorkers-1 ? numLines : batchSize*(i+1);
-
-            Reader reader = new DBpediaAbstractsReader("/media/data/datasets/gsoc/long_abstracts_en.ttl", start, end);
-            PipelineFinisher finisher = new MongoDBInsertFinisher(Config.MONGO_SERVER, Config.MONGO_PORT);
-
-            Pipeline pipeline = new Pipeline(reader, finisher);
-            pipeline.addTask(new FindLemmasTask());
-            pipeline.addTask(new AnnotateTask(Config.SPOTLIGHT_ENDPOINT));
-            pipeline.addTask(new FindTypesTask(Config.DBPEDIA_ENDPOINT));
-            pipeline.addTask(new FindCategoriesTask(Config.DBPEDIA_ENDPOINT));
-            pipeline.addTask(new FindHypernymsTask(Config.HYPERNYMS_ENDPOINT));
-
-
-            PipelineThread task = new PipelineThread(reader, finisher, pipeline);
-            Thread thread = new Thread(task);
-            thread.start();
         }
     }
 }

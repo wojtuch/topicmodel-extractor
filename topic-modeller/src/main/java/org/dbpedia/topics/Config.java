@@ -22,6 +22,8 @@ public class Config {
     public static String ELASTIC_SERVER;
     public static int ELASTIC_PORT;
     public static String ELASTIC_INDEX;
+    public static int LDA_NUM_THREADS;
+    public static int LDA_NUM_ITERATIONS;
     static {
         try {
             Properties properties = new Properties();
@@ -40,6 +42,8 @@ public class Config {
             ELASTIC_SERVER = properties.getProperty("elastic_server", "localhost");
             ELASTIC_PORT = Integer.parseInt(properties.getProperty("elastic_port", "9300"));
             ELASTIC_INDEX = properties.getProperty("elastic_index", "gsoc");
+            LDA_NUM_THREADS = Integer.parseInt(properties.getProperty("lda_num_threads", "16"));
+            LDA_NUM_ITERATIONS = Integer.parseInt(properties.getProperty("lda_num_iterations", "1000"));
         } catch (IOException e) {
             e.printStackTrace();
         }
