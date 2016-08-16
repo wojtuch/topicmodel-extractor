@@ -79,4 +79,4 @@ In order to do so, one has to create an empty file and write labels one under an
 And so, string in the kth line will be the label of Topic k.
 The service will search for the file in the following location (for a model from previous example and the default cache directory) `inferencer-cache/50-e-h-t/topicsLabels.txt`.
 
-* For a version of DBpedia Spotlight demo interface with enabled support of the inference service, check out the [following fork](/wojtuch/demo/).
+* For a version of DBpedia Spotlight demo interface with enabled support of the inference service, check out the [following fork](https://github.com/wojtuch/demo).
