@@ -17,9 +17,9 @@ server_base_uri=http://0.0.0.0:8182/
 num_topic_words=15
 
 # where are the triple files
-hypernyms_triple_file=/media/data/datasets/gsoc/hypernyms/en.lhd.extension.2015-10.nt
-types_triple_file=/media/data/datasets/gsoc/instance_types_en.ttl
-categories_triple_file=/media/data/datasets/gsoc/article_categories_en.ttl
+hypernyms_triple_file=<local file (en.lhd.extension.2015-10.nt) for in memory lookup>
+types_triple_file=<local file (instance_types_en.ttl) for in memory lookup>
+categories_triple_file=<local file (article_categories_en.ttl) for in memory lookup>
 
 cache_directory=inferencer-cache
 cache_file_words_for_topics=wordsForTopics.ser
