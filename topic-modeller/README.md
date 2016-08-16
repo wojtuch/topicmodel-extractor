@@ -10,6 +10,11 @@ In order to use this project, make sure you have the following components instal
 * MongoDB for storing preprocessed DBpedia abstracts.
 * _Optionally_ Elasticsearch for importing the annotated and enriched dataset and utilizing the power search engine.
 * _Optionally_ A triple store (e.g. Virtuoso) to query for hypernyms. It is optional for two reasons however - you don't have to mine topics using hypernyms and if you decide to do so, you can (and actually _should_ -- it's much faster) go for in-memory annotations, where the triple files are read into main memory.
+* To clarify: on this page, in the wiki and throughout the code I use the terms _types_, _categories_ and _hypernyms_. When I say "type/category/hypernym of X", I mean the object of a statement `X type/category/hypernym object ` with following predicates:
+  * Type: `http://www.w3.org/1999/02/22-rdf-syntax-ns#type`
+  * Category: `http://purl.org/dc/terms/subject`
+  * Hypernym: `http://purl.org/linguistics/gold/hypernym`
+* N-Triple files with types and categories can be downloaded from [here](http://wiki.dbpedia.org/Downloads2015-10) and the hypernyms dataset can be found [here](http://ner.vse.cz/datasets/linkedhypernyms/).
 
 #### Building and running
 
