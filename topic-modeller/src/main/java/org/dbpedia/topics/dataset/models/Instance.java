@@ -122,4 +122,13 @@ public abstract class Instance implements Serializable {
     public void setLemmas(List<String> lemmas) {
         this.lemmas = lemmas;
     }
+
+    /**
+     * Used to remove this property when reading instances from MongoDB and serializing them to disk as json.
+     * Id field is redundant in this case.
+     * @param id
+     */
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
 }

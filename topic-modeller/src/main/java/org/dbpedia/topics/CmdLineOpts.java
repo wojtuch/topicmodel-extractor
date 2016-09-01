@@ -65,7 +65,7 @@ class CmdLineOpts {
             .desc("Read the documents from mongo and store them on disc in chunks of specified size in the specified output dir.").build();
 
     public static final Option CHUNK_SIZE = Option.builder("cs").longOpt("chunk-size")
-            .desc("Size of the chunk.").build();
+            .desc("Size of the chunk (when saving mongo dump).").hasArg().build();
 
     public static final Option IMPORT_ELASTIC = Option.builder("ie").longOpt("import-to-elastic")
             .desc("Reads the mongo dump and inserts the document to elastic search.").build();

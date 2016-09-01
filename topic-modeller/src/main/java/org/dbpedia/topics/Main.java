@@ -1,5 +1,7 @@
 package org.dbpedia.topics;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.cli.ParseException;
 import org.dbpedia.topics.dataset.models.Instance;
 import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
@@ -11,10 +13,12 @@ import org.dbpedia.topics.io.MongoWrapper;
 import org.dbpedia.topics.modelling.HierarchicalLdaModel;
 import org.dbpedia.topics.modelling.LDAInputGenerator;
 import org.dbpedia.topics.modelling.LdaModel;
-import org.dbpedia.topics.pipeline.*;
+import org.dbpedia.topics.pipeline.IPipeline;
+import org.dbpedia.topics.pipeline.Pipeline;
+import org.dbpedia.topics.pipeline.PipelineFinisher;
+import org.dbpedia.topics.pipeline.StreamingPipeline;
 import org.dbpedia.topics.pipeline.impl.*;
 import org.dbpedia.topics.rdfencoder.RDFEncoder;
-import org.dbpedia.topics.utils.Utils;
 import org.mongodb.morphia.query.MorphiaIterator;
 
 import java.io.*;
@@ -279,8 +283,9 @@ public class Main {
         new File(outputDirStr).mkdirs();
         MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
         String readerStr = opts.getOptionValue(CmdLineOpts.READER);
-        System.out.println("Saving dump to " + outputDirStr);
-        int partitionSize = Integer.parseInt(opts.getOptionValue(CmdLineOpts.CHUNK_SIZE, "250000"));
+        String outputFormatStr = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT, "");
+        int partitionSize = Integer.parseInt(opts.getOptionValue(CmdLineOpts.CHUNK_SIZE, "200000"));
+        System.out.println(String.format("Saving dump to directory '%s' in chunks of size %d.", outputDirStr, partitionSize));
         List<Instance> dump = new ArrayList<>(partitionSize);
         int ct = 0;
         int part = 0;
@@ -290,10 +295,20 @@ public class Main {
                 if (++ct % 25000 == 0) {
                     System.out.println(ct);
                 }
+                dbAbstract.setId(null);
                 dump.add(dbAbstract);
                 if (dump.size() == partitionSize) {
-                    try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(outputDirStr, (part++)+".ser")))) {
-                        oos.writeObject(dump);
+                    System.out.println("saving chunk");
+                    if (outputFormatStr.toLowerCase().equals("json")) {
+                        try (Writer writer = new FileWriter(new File(outputDirStr, (part++)+".json"))) {
+                            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                            gson.toJson(dump, writer);
+                        }
+                    }
+                    else {
+                        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(outputDirStr, (part++)+".ser")))) {
+                            oos.writeObject(dump);
+                        }
                     }
                     dump.clear();
                 }
@@ -304,9 +319,18 @@ public class Main {
             throw new IllegalArgumentException("Unknown reader: " + readerStr);
         }
 
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(outputDirStr, (part++)+".ser")))) {
-            oos.writeObject(dump);
+        //write last part
+        System.out.println("saving last chunk");
+        if (outputFormatStr.toLowerCase().equals("json")) {
+            try (Writer writer = new FileWriter(new File(outputDirStr, (part++)+".json"))) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                gson.toJson(dump, writer);
+            }
+        }
+        else {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(outputDirStr, (part++)+".ser")))) {
+                oos.writeObject(dump);
+            }
         }
     }
 
