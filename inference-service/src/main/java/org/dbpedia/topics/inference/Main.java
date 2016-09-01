@@ -62,14 +62,28 @@ public class Main {
             Inferencer.getInferencer(features).createInMemoryTasks(typesFile, categoriesFile, hypernymsFile);
         }
         else {
-            throw new RuntimeException("Not yet implemented, currently only in-memory lookup possible.");
+            throw new IllegalArgumentException("Not yet implemented, currently only in-memory lookup possible.");
         }
 
         final HttpServer server = createServer();
+
+        // register shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                server.shutdown();
+            }
+        }, "shutdownHook"));
+
         System.out.println(String.format("Jersey app started with WADL available at "
                 + "%sapplication.wadl\nHit enter to stop it...", Config.SERVER_BASE_URI));
-        System.in.read();
-        server.shutdown();
+        server.start();
+
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
