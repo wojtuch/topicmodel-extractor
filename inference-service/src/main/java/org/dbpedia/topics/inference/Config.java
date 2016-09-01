@@ -23,7 +23,7 @@ public class Config {
             Properties properties = new Properties();
             properties.load(new FileInputStream("inferencer.properties"));
             SERVER_BASE_URI = properties.getProperty("server_base_uri", "http://0.0.0.0:8182/inference-service/");
-            NUM_TOPIC_WORDS = Integer.valueOf(properties.getProperty("num_topic_words"), 15);
+            NUM_TOPIC_WORDS = Integer.valueOf(properties.getProperty("num_topic_words", "15"));
             HYPERNYMS_TRIPLE_FILE = properties.getProperty("hypernyms_triple_file");
             TYPES_TRIPLE_FILE = properties.getProperty("types_triple_file");
             CATEGORIES_TRIPLE_FILE = properties.getProperty("categories_triple_file");
