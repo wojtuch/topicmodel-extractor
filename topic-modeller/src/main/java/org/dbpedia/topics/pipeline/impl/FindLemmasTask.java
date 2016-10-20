@@ -25,14 +25,7 @@ public class FindLemmasTask extends PipelineTask {
         List<String> lemmas = lemmatizer.lemmatize(instance.getText());
         List<String> stopWords = Arrays.asList(StopWords.STOPWORDS);
         lemmas = lemmas.parallelStream()
-                .filter(lemma -> {
-                    boolean result = true;
-                    //remove stop words
-                    result = result && !stopWords.contains(lemma);
-                    //remove tokens which consist of non-letters only
-                    result = result && !lemma.matches("\\p{P}+");
-                    return result;
-                })
+                .filter(lemma -> lemma.matches("[a-zA-Z][-\\.\\w]+") && !stopWords.contains(lemma))
                 .collect(Collectors.toList());
         instance.setLemmas(lemmas);
     }

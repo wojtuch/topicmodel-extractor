@@ -8,6 +8,7 @@ import cc.mallet.types.Alphabet;
 import cc.mallet.types.IDSorter;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
+import org.dbpedia.topics.Config;
 import org.dbpedia.topics.Constants;
 import org.dbpedia.topics.io.StopWords;
 
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Created by wlu on 26.05.16.
  */
-public class LdaModel {
+public class LDAWrapper implements ITopicModelWrapper {
     /**
      * defines if
      * words (words)
@@ -53,7 +54,7 @@ public class LdaModel {
     private String[] blacklistHypernyms = new String[]{
     };
 
-    public LdaModel(String... topicModes) {
+    public LDAWrapper(String... topicModes) {
         this.features = Arrays.asList(topicModes).stream().filter(t -> t!=null).collect(Collectors.toList());
 
         // Pipes: lowercase, remove stopwords, map to features
@@ -153,7 +154,7 @@ public class LdaModel {
         instances.addThruPipe(new Instance(text, null, "test instance", null));
 
         TopicInferencer inferencer = model.getInferencer();
-        double[] probabilities = inferencer.getSampledDistribution(instances.get(0), 10, 1, 5);
+        double[] probabilities = inferencer.getSampledDistribution(instances.get(0), Config.LDA_NUM_ITERATIONS, 1, 5);
         return probabilities;
     }
 }

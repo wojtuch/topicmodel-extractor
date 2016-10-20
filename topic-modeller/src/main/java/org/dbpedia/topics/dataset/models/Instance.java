@@ -29,6 +29,10 @@ public abstract class Instance implements Serializable {
     @Property
     protected List<String> lemmas = new ArrayList<>();
 
+    protected String uuid;
+    protected String title;
+    protected String label;
+
     public Instance() {
     }
 
@@ -130,5 +134,29 @@ public abstract class Instance implements Serializable {
      */
     public void setId(ObjectId id) {
         this.id = id;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }

@@ -43,7 +43,7 @@ public class MongoWrapper {
         return result;
     }
 
-    public <T> MorphiaIterator<T, T> getAllRecordsIterator(Class<T> clazz) {
+    public <T> MorphiaIterator<T, T> getAllRecordsIterator(Class<? extends T> clazz) {
         MorphiaIterator iterator = getAllRecordsQuery(clazz).fetch();
         return iterator;
     }
@@ -58,10 +58,10 @@ public class MongoWrapper {
         return query;
     }
 
-    public <T> boolean recordExists(Class<T> clazz, String uri) {
-        List<T> result = datastore.createQuery(clazz).field("uri").equal(uri).retrievedFields(true, "uri").asList();
+    public <T> boolean recordExists(Class<T> clazz, String uuid) {
+        List<T> result = datastore.createQuery(clazz).field("uuid").equal(uuid).retrievedFields(true, "uuid").asList();
         if (result.size() > 1) {
-            throw new RuntimeException("Duplicate entry in the database for uri " + uri);
+            throw new RuntimeException("Duplicate entry in the database for uuid " + uuid);
         }
 
         return result.size() == 1;

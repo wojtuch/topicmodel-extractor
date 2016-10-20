@@ -14,10 +14,10 @@ import java.util.stream.Stream;
 /**
  * Created by wlu on 15.06.16.
  */
-public class LDAInputGenerator {
+public class MalletInputGenerator {
     private List<String> features;
 
-    public LDAInputGenerator(String... _features) {
+    public MalletInputGenerator(String... _features) {
         features = Arrays.asList(_features);
     }
 
@@ -88,27 +88,5 @@ public class LDAInputGenerator {
         }
 
         return featureMatrix;
-//        int size = dataset.size();
-//
-//        List<List<String>> temp = new ArrayList<>();
-//        for (int i = 0; i < size; i++) {
-//            temp.add(new ArrayList<>());
-//        }
-//
-//        //go through passed features
-//        for (String feature : features) {
-//            //go through every document
-//            for (int i = 0; i < size; i++) {
-//                List<String> current = temp.get(i);
-//                String words = generateForOneFeature(dataset.getDocument(i), feature);
-//                current.add(words);
-//                temp.set(i, current);
-//            }
-//        }
-//
-//        List<String> featureMatrix = temp.stream()
-//                .map(list -> list.stream().collect(Collectors.joining(" ")))
-//                .collect(Collectors.toList());
-//        return featureMatrix;
     }
 }

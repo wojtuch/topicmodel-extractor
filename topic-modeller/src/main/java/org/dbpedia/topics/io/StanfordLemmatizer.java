@@ -39,12 +39,10 @@ public class StanfordLemmatizer {
 
         // remove -lrb-, -rrb-, -lsb-, ... -- the brackets
         lemmas = lemmas.stream()
-            .map(lemma -> {
-                return lemma
-                        .replaceAll("(?i)-[lr].b-", "")
-                        .toLowerCase()
-                        .trim();
-            })
+            .map(lemma -> lemma
+                    .replaceAll("(?i)-[lr].b-", "")
+                    .toLowerCase()
+                    .trim())
             .filter(lemma -> lemma.length() > 0)
             .collect(Collectors.toList());
 

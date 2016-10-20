@@ -5,5 +5,7 @@ package org.dbpedia.topics.pipeline;
  */
 public interface IPipeline {
     boolean addTask(PipelineTask task);
+    boolean addFinisher(PipelineFinisher finisher);
     void doWork();
+    void close();
 }

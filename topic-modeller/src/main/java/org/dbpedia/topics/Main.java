@@ -4,21 +4,26 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.cli.ParseException;
 import org.dbpedia.topics.dataset.models.Instance;
-import org.dbpedia.topics.dataset.models.impl.DBpediaAbstract;
+import org.dbpedia.topics.dataset.models.impl.*;
 import org.dbpedia.topics.dataset.readers.Reader;
 import org.dbpedia.topics.dataset.readers.StreamingReader;
+import org.dbpedia.topics.dataset.readers.impl.ANDReader;
+import org.dbpedia.topics.dataset.readers.impl.BBCReader;
 import org.dbpedia.topics.dataset.readers.impl.DBpediaAbstractsReader;
 import org.dbpedia.topics.dataset.readers.impl.WikipediaDumpStreamingReader;
 import org.dbpedia.topics.io.MongoWrapper;
-import org.dbpedia.topics.modelling.HierarchicalLdaModel;
-import org.dbpedia.topics.modelling.LDAInputGenerator;
-import org.dbpedia.topics.modelling.LdaModel;
+import org.dbpedia.topics.modelling.HLDAWrapper;
+import org.dbpedia.topics.modelling.MalletInputGenerator;
+import org.dbpedia.topics.modelling.LDAWrapper;
+import org.dbpedia.topics.modelling.ITopicModelWrapper;
 import org.dbpedia.topics.pipeline.IPipeline;
 import org.dbpedia.topics.pipeline.Pipeline;
-import org.dbpedia.topics.pipeline.PipelineFinisher;
 import org.dbpedia.topics.pipeline.StreamingPipeline;
 import org.dbpedia.topics.pipeline.impl.*;
-import org.dbpedia.topics.rdfencoder.RDFEncoder;
+import org.dbpedia.topics.rdfencoder.HLDA2RDFEncoder;
+import org.dbpedia.topics.rdfencoder.IEncoder;
+import org.dbpedia.topics.rdfencoder.LDA2RDFEncoder;
+import org.dbpedia.topics.utils.Utils;
 import org.mongodb.morphia.query.MorphiaIterator;
 
 import java.io.*;
@@ -36,7 +41,7 @@ import java.util.stream.Stream;
  * Created by wlu on 26.05.16.
  */
 public class Main {
-    public static void main(String[] args) throws URISyntaxException, IOException {
+    public static void main(String[] args) throws URISyntaxException, IOException, ClassNotFoundException {
         CmdLineOpts opts = new CmdLineOpts();
 
         try {
@@ -85,33 +90,46 @@ public class Main {
     }
 
     private static void startPipeline(CmdLineOpts opts) throws URISyntaxException {
-        PipelineFinisher finisher;
         IPipeline pipeline;
-
-        String finisherStr = opts.getOptionValue(CmdLineOpts.FINISHER);
-        if (finisherStr.equals("mongo")) {
-            System.out.println("mongodb finisher");
-            finisher = new MongoDBInsertFinisher(Config.MONGO_SERVER, Config.MONGO_PORT,
-                    opts.hasOption(CmdLineOpts.DONT_STORE_TEXT));
-        }else if (finisherStr.equals("dummy")) {
-            System.out.println("dummy finisher");
-            finisher = new TestFinisher();
-        }
-        else {
-            throw new IllegalArgumentException("Unknown finisher: " + finisherStr);
-        }
 
         String readerStr = opts.getOptionValue(CmdLineOpts.READER);
         if (readerStr.equals("abstracts")) {
             Reader reader = new DBpediaAbstractsReader(Config.ABSTRACTS_TRIPLE_FILE);
-            pipeline = new Pipeline(reader, finisher);
+            pipeline = new Pipeline(reader);
         } else if (readerStr.equals("wikidump")) {
             StreamingReader reader = new WikipediaDumpStreamingReader(Config.WIKI_AS_XML_FOLDER);
-            pipeline = new StreamingPipeline(reader, finisher);
+            pipeline = new StreamingPipeline(reader);
+        } else if (readerStr.equals("bbc")) {
+            Reader reader = new BBCReader(Config.BBC_DIRECTORY);
+            pipeline = new Pipeline(reader);
+        } else if (readerStr.equals("and")) {
+            Reader reader = new ANDReader(Config.AND_DIRECTORY, false);
+            pipeline = new Pipeline(reader);
+        } else if (readerStr.equals("and2382")) {
+            Reader reader = new ANDReader(Config.AND2382_DIRECTORY, true);
+            pipeline = new Pipeline(reader);
         } else {
             throw new IllegalArgumentException("Unknown reader: " + readerStr);
         }
         System.out.println("Reader: " + readerStr);
+
+
+        String[] finishersStr = opts.getOptionValues(CmdLineOpts.FINISHER);
+        for (String finisherStr : finishersStr) {
+            if (finisherStr.equals("mongo")) {
+                System.out.println("mongodb finisher");
+                pipeline.addFinisher(new MongoDBInsertFinisher(Config.MONGO_SERVER, Config.MONGO_PORT,
+                        opts.hasOption(CmdLineOpts.DONT_STORE_TEXT)));
+            } else if (finisherStr.equals("json")) {
+                System.out.println("json finisher");
+                pipeline.addFinisher(new JsonDiskFinisher(opts.getOptionValue(CmdLineOpts.OUTPUT)));
+            } else if (finisherStr.equals("dummy")) {
+                System.out.println("dummy finisher");
+                pipeline.addFinisher(new TestFinisher());
+            } else {
+                throw new IllegalArgumentException("Unknown finisher: " + finishersStr);
+            }
+        }
 
         List<String> tasks = Arrays.asList(opts.getOptionValues(CmdLineOpts.TASKS));
         System.out.println("Passed tasks: " + tasks);
@@ -149,7 +167,7 @@ public class Main {
             pipeline.doWork();
         }
         finally {
-            finisher.close();
+            pipeline.close();
         }
     }
 
@@ -169,103 +187,207 @@ public class Main {
     }
 
     private static void runLDA(CmdLineOpts opts) throws IOException {
+        List<String[]> featuresCombinations = new ArrayList<>();
 
-        String[] features = opts.getOptionValues(CmdLineOpts.FEATURES);
+        if (opts.hasOption(CmdLineOpts.FEATURES)) {
+            featuresCombinations.add(opts.getOptionValues(CmdLineOpts.FEATURES));
+        }
+        else {
+            featuresCombinations.addAll(Utils.createPowerSet("w", "e", "t", "c", "h"));
+        }
+
         String[] strNumTopicsArr = opts.getOptionValues(CmdLineOpts.NUM_TOPICS);
         int[] numTopicsArr = new int[strNumTopicsArr.length];
         for (int i = 0; i < strNumTopicsArr.length; i++) {
             numTopicsArr[i] = Integer.valueOf(strNumTopicsArr[i]);
         }
+        System.out.println("Number(s) of topics: " + Arrays.toString(numTopicsArr));
 
-        LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
         MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
 
-        MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
-        List<String> featureMatrix = new ArrayList<>();
-        for (DBpediaAbstract dbAbstract : iter) {
-            featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
+        List<Instance> input = new ArrayList<>();
+        MorphiaIterator<Instance, Instance> iter;
+        String readerStr = opts.getOptionValue(CmdLineOpts.READER);
+        System.out.println("Reader: " + readerStr);
+        switch (readerStr) {
+            case "abstracts":
+                iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
+                break;
+            case "wikidump":
+                iter = mongo.getAllRecordsIterator(WikipediaArticle.class);
+                break;
+            case "bbc":
+                iter = mongo.getAllRecordsIterator(BBCArticle.class);
+                break;
+            case "and":
+                iter = mongo.getAllRecordsIterator(ANDArticle.class);
+                break;
+            case "and2382":
+                iter = mongo.getAllRecordsIterator(AND2382Article.class);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown reader: " + readerStr);
+        }
+        for (Instance instance : iter) {
+            input.add(instance);
         }
 
-        String outputDir = opts.getOptionValue(CmdLineOpts.OUTPUT);
-        new File(outputDir).mkdirs();
+        for (String[] features : featuresCombinations) {
+            System.out.println("Used features: "+Arrays.toString(features));
+            MalletInputGenerator inputGenerator = new MalletInputGenerator(features);
 
-        for (int numTopics : numTopicsArr) {
-            LdaModel ldaModel = new LdaModel(features);
-            ldaModel.createModel(featureMatrix, numTopics, Config.LDA_NUM_ITERATIONS, Config.LDA_NUM_THREADS);
+            List<String> featureMatrix = new ArrayList<>();
+            for (Instance instance : input) {
+                featureMatrix.add(inputGenerator.generateFeatureVector(instance));
+            }
 
-            String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
-            String outputModelFile = String.format("%s/%d-%s.ser", outputDir, numTopics, featureSetDescriptor);
-            ldaModel.saveToFile(outputModelFile);
-            String outputCsvFile = String.format("%s/%d-%s.csv", outputDir, numTopics, featureSetDescriptor);
-            int numTopicDescrWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20"));
-            ldaModel.describeTopicModel(outputCsvFile, numTopicDescrWords);
+            String outputDir = opts.getOptionValue(CmdLineOpts.OUTPUT);
+            new File(outputDir).mkdirs();
+
+            for (int numTopics : numTopicsArr) {
+                LDAWrapper ldaModel = new LDAWrapper(features);
+                ldaModel.createModel(featureMatrix, numTopics, Config.LDA_NUM_ITERATIONS, Config.LDA_NUM_THREADS);
+
+                String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
+                String outputModelFile = String.format("%s/%d-%s.ser", outputDir, numTopics, featureSetDescriptor);
+                ldaModel.saveToFile(outputModelFile);
+//            String outputCsvFile = String.format("%s/%d-%s.csv", outputDir, numTopics, featureSetDescriptor);
+//            int numTopicDescrWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20"));
+//            ldaModel.describeTopicModel(outputCsvFile, numTopicDescrWords);
+            }
         }
     }
 
     private static void runHLDA(CmdLineOpts opts) throws IOException {
-        String[] features = opts.getOptionValues(CmdLineOpts.FEATURES);
+        List<String[]> featuresCombinations = new ArrayList<>();
+        if (opts.hasOption(CmdLineOpts.FEATURES)) {
+            featuresCombinations.add(opts.getOptionValues(CmdLineOpts.FEATURES));
+        } else {
+            featuresCombinations.addAll(Utils.createPowerSet("w", "e", "t", "c", "h"));
+        }
 
-        LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
         MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
 
-        MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
-        List<String> featureMatrix = new ArrayList<>();
-        for (DBpediaAbstract dbAbstract : iter) {
-            featureMatrix.add(inputGenerator.generateFeatureVector(dbAbstract));
+        List<Instance> input = new ArrayList<>();
+        MorphiaIterator<Instance, Instance> iter;
+        String readerStr = opts.getOptionValue(CmdLineOpts.READER);
+        System.out.println("Reader: " + readerStr);
+        switch (readerStr) {
+            case "abstracts":
+                iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
+                break;
+            case "wikidump":
+                iter = mongo.getAllRecordsIterator(WikipediaArticle.class);
+                break;
+            case "bbc":
+                iter = mongo.getAllRecordsIterator(BBCArticle.class);
+                break;
+            case "and":
+                iter = mongo.getAllRecordsIterator(ANDArticle.class);
+                break;
+            case "and2382":
+                iter = mongo.getAllRecordsIterator(AND2382Article.class);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown reader: " + readerStr);
+        }
+        for (Instance instance : iter) {
+            input.add(instance);
         }
 
         String outputDir = opts.getOptionValue(CmdLineOpts.OUTPUT);
         new File(outputDir).mkdirs();
 
-        String[] strNumLevelsArr = opts.getOptionValues(CmdLineOpts.NUM_LEVELS);
-        int[] numLevelsArr = new int[strNumLevelsArr.length];
-        for (int i = 0; i < strNumLevelsArr.length; i++) {
-            numLevelsArr[i] = Integer.valueOf(strNumLevelsArr[i]);
-        }
+        for (String[] features : featuresCombinations) {
+            MalletInputGenerator inputGenerator = new MalletInputGenerator(features);
 
-        for (int numLevels : numLevelsArr) {
-            HierarchicalLdaModel hldaModel = new HierarchicalLdaModel(features);
-            hldaModel.setNumWords(Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20")));
-            hldaModel.createModel(featureMatrix, Config.LDA_NUM_ITERATIONS, numLevels);
+            List<String> featureMatrix = new ArrayList<>();
+            for (Instance instance : input) {
+                featureMatrix.add(inputGenerator.generateFeatureVector(instance));
+            }
 
-            String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
-            String outputModelFile = String.format("%s/%s.ser", outputDir, featureSetDescriptor);
-            hldaModel.saveToFile(outputModelFile);
-            String outputCsvFile = String.format("%s/%s.csv", outputDir, featureSetDescriptor);
-            hldaModel.describeTopicModel(outputCsvFile);
+            String[] strNumLevelsArr = opts.getOptionValues(CmdLineOpts.NUM_LEVELS);
+            int[] numLevelsArr = new int[strNumLevelsArr.length];
+            for (int i = 0; i < strNumLevelsArr.length; i++) {
+                numLevelsArr[i] = Integer.valueOf(strNumLevelsArr[i]);
+            }
+
+            for (int numLevels : numLevelsArr) {
+                HLDAWrapper hldaModel = new HLDAWrapper(features);
+                hldaModel.setNumWords(Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "20")));
+                hldaModel.createModel(featureMatrix, Config.LDA_NUM_ITERATIONS, numLevels);
+
+                String featureSetDescriptor = Stream.of(features).collect(Collectors.joining("-"));
+                String outputModelFile = String.format("%s/%s-%s.ser", outputDir, numLevels, featureSetDescriptor);
+                hldaModel.saveToFile(outputModelFile);
+                String outputCsvFile = String.format("%s/%d-%s.csv", outputDir, numLevels, featureSetDescriptor);
+                hldaModel.describeTopicModel(outputCsvFile);
+            }
         }
     }
 
-    private static void startEncoding(CmdLineOpts opts) throws IOException {
+    private static void startEncoding(CmdLineOpts opts) throws IOException, ClassNotFoundException {
         Path modelPath = Paths.get(opts.getOptionValue(CmdLineOpts.INPUT));
 
-        String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT);
         String outputFormat = opts.getOptionValue(CmdLineOpts.OUTPUT_FORMAT, "NT");
         int numDescribingWords = Integer.valueOf(opts.getOptionValue(CmdLineOpts.NUM_TOPIC_WORDS, "10"));
 
-        MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
-
         String filenameNoExt = modelPath.getFileName().toString().replace(".ser", "");
         String[] features = filenameNoExt.split("-", 2)[1].split("-");
-        LdaModel ldaModel = new LdaModel(features);
-        try {
-            ldaModel.readFromFile(modelPath.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        ITopicModelWrapper topicModel;
+        IEncoder encoder;
 
-        RDFEncoder encoder = new RDFEncoder(ldaModel);
+        String algorithm = opts.getOptionValue(CmdLineOpts.MODELLING_ALGORITHM);
+        if (algorithm == null) {
+            System.err.println("You must specify the algorithm you want to use for topic modelling!");
+            opts.printHelp();
+            return;
+        } else if (algorithm.equals("lda")) {
+            topicModel = new LDAWrapper(features);
+            encoder = new LDA2RDFEncoder((LDAWrapper)topicModel);
+        } else if (algorithm.equals("hlda")) {
+            topicModel = new HLDAWrapper(features);
+            encoder = new HLDA2RDFEncoder((HLDAWrapper)topicModel);
+        } else {
+            throw new IllegalArgumentException("Unknown algorithm: " + algorithm);
+        }
+        topicModel.readFromFile(modelPath.toString());
         encoder.encodeTopics(numDescribingWords);
 
-        LDAInputGenerator inputGenerator = new LDAInputGenerator(features);
-        MorphiaIterator<DBpediaAbstract, DBpediaAbstract> iter = mongo.getAllRecordsIterator(DBpediaAbstract.class, 10);
-        for (DBpediaAbstract dbAbstract : iter) {
-            String input = inputGenerator.generateFeatureVector(dbAbstract);
-            encoder.encodeOneObservation(dbAbstract.getUri(), input);
+        if (!algorithm.equals("hlda")) {
+            MongoWrapper mongo = new MongoWrapper(Config.MONGO_SERVER, Config.MONGO_PORT);
+            MorphiaIterator<Instance, Instance> iter;
+            String readerStr = opts.getOptionValue(CmdLineOpts.READER);
+            System.out.println("Reader: " + readerStr);
+            switch (readerStr) {
+                case "abstracts":
+                    iter = mongo.getAllRecordsIterator(DBpediaAbstract.class);
+                    break;
+                case "wikidump":
+                    iter = mongo.getAllRecordsIterator(WikipediaArticle.class);
+                    break;
+                case "bbc":
+                    iter = mongo.getAllRecordsIterator(BBCArticle.class);
+                    break;
+                case "and":
+                    iter = mongo.getAllRecordsIterator(ANDArticle.class);
+                    break;
+                case "and2382":
+                    iter = mongo.getAllRecordsIterator(AND2382Article.class);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown reader: " + readerStr);
+            }
+
+            MalletInputGenerator inputGenerator = new MalletInputGenerator(features);
+
+            for (Instance instance : iter) {
+                String input = inputGenerator.generateFeatureVector(instance);
+                encoder.encodeOneObservation(instance.getUuid(), input);
+            }
         }
 
+        String outputFile = opts.getOptionValue(CmdLineOpts.OUTPUT);
         if (outputFile == null) {
             System.out.println(encoder.toString(outputFormat));
         }

@@ -7,7 +7,6 @@ import cc.mallet.topics.HierarchicalLdaUtils;
 import cc.mallet.types.Instance;
 import cc.mallet.types.InstanceList;
 import cc.mallet.util.Randoms;
-import org.dbpedia.topics.Config;
 import org.dbpedia.topics.Constants;
 import org.dbpedia.topics.io.StopWords;
 
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Created by wlu on 25.07.16.
  */
-public class HierarchicalLdaModel {
+public class HLDAWrapper implements ITopicModelWrapper {
 
     /**
      * defines if
@@ -59,7 +58,7 @@ public class HierarchicalLdaModel {
     private String[] blacklistHypernyms = new String[]{
     };
 
-    public HierarchicalLdaModel(String... topicModes) {
+    public HLDAWrapper(String... topicModes) {
         this.features = Arrays.asList(topicModes).stream().filter(t -> t!=null).collect(Collectors.toList());
 
         TokenSequenceRemoveStopwords tsrs = new TokenSequenceRemoveStopwords();
@@ -119,7 +118,7 @@ public class HierarchicalLdaModel {
     }
 
     public void describeTopicModel(String outputFilename) throws IOException {
-        HierarchicalLdaUtils utils = new HierarchicalLdaUtils(hierarchicalLDAModel);
+        HierarchicalLdaUtils utils = new HierarchicalLdaUtils(this);
         String hierarchyDescription = utils.nodesAsString();
         Files.write(Paths.get(outputFilename), hierarchyDescription.getBytes());
     }
@@ -130,5 +129,13 @@ public class HierarchicalLdaModel {
 
     public void setNumWords(int numWords) {
         this.numWords = numWords;
+    }
+
+    public HierarchicalLDA getModel() {
+        return hierarchicalLDAModel;
+    }
+
+    public List<String> getFeatures() {
+        return features;
     }
 }

@@ -6,12 +6,11 @@ import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.dbpedia.topics.modelling.LdaModel;
+import org.dbpedia.topics.modelling.LDAWrapper;
 
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,16 +20,11 @@ import java.util.stream.Collectors;
 /**
  * Created by wlu on 05.07.16.
  */
-public class RDFEncoder {
-
-    private static final String NAMESPACE = "http://example.org/topic-vocab#";
-    private static final String NAMESPACE_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-    private static final String NAMESPACE_DBO = "http://dbpedia.org/ontology/";
-
+public class LDA2RDFEncoder implements IEncoder {
     private Model rdfModel;
-    private LdaModel ldaModel;
+    private LDAWrapper ldaModel;
 
-    public RDFEncoder(LdaModel ldaModel) {
+    public LDA2RDFEncoder(LDAWrapper ldaModel) {
         this.ldaModel = ldaModel;
 
         String graphName = String.format("%d-%s",
@@ -39,8 +33,8 @@ public class RDFEncoder {
         rdfModel = ModelFactory.createMemModelMaker().createModel(graphName);
     }
 
+    @Override
     public void encodeTopics(int numTopicDescribingWords) {
-        DecimalFormat decimalFormatter = new DecimalFormat("#0.00");
         // The data alphabet maps word IDs to strings
         Alphabet dataAlphabet = ldaModel.getModel().getAlphabet();
 
@@ -105,6 +99,7 @@ public class RDFEncoder {
         }
     }
 
+    @Override
     public void encodeOneObservation(String uri, String text) {
 
         double[] probabilities = ldaModel.predict(text);
@@ -143,9 +138,5 @@ public class RDFEncoder {
         StringWriter out = new StringWriter();
         rdfModel.write(out, format);
         return out.toString();
-    }
-
-    public Model getRdfModel() {
-        return rdfModel;
     }
 }

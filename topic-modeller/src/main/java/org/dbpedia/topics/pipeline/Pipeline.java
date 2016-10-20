@@ -14,7 +14,7 @@ import java.util.List;
 public class Pipeline implements IPipeline {
     private List<PipelineTask> pipelineTasks = new ArrayList<>();
     private Reader datasetReader;
-    private PipelineFinisher pipelineFinisher;
+    private List<PipelineFinisher> pipelineFinishers = new ArrayList<>();
 
     /**
      * Creates a Pipeline.
@@ -24,7 +24,15 @@ public class Pipeline implements IPipeline {
      */
     public Pipeline(Reader datasetReader, PipelineFinisher pipelineFinisher) {
         this.datasetReader = datasetReader;
-        this.pipelineFinisher = pipelineFinisher;
+        this.pipelineFinishers.add(pipelineFinisher);
+    }
+    /**
+     * Creates a Pipeline.
+     * The source dataset will be provided by the Reader.readDataset() method.
+     * @param datasetReader
+     */
+    public Pipeline(Reader datasetReader) {
+        this.datasetReader = datasetReader;
     }
 
     /**
@@ -34,6 +42,11 @@ public class Pipeline implements IPipeline {
      */
     public boolean addTask(PipelineTask task) {
         return this.pipelineTasks.add(task);
+    }
+
+    @Override
+    public boolean addFinisher(PipelineFinisher finisher) {
+        return this.pipelineFinishers.add(finisher);
     }
 
     /**
@@ -49,21 +62,33 @@ public class Pipeline implements IPipeline {
                 System.out.println(ct);
             }
 
-            // skip the pipeline if the instance is present in the database
-            if (pipelineFinisher instanceof MongoDBInsertFinisher) {
-                MongoDBInsertFinisher casted = (MongoDBInsertFinisher) pipelineFinisher;
-                if (casted.recordAlreadyExists(instance)) {
-                    continue;
-                }
-            }
-
             for (PipelineTask pipelineTask : pipelineTasks) {
                 pipelineTask.processInstance(instance);
             }
-            pipelineFinisher.finishInstance(instance);
+
+            for (PipelineFinisher pipelineFinisher : pipelineFinishers) {
+                // skip the pipeline if the instance is present in the database
+                if (pipelineFinisher instanceof MongoDBInsertFinisher) {
+                    MongoDBInsertFinisher casted = (MongoDBInsertFinisher) pipelineFinisher;
+                    if (casted.recordAlreadyExists(instance)) {
+                        continue;
+                    }
+                }
+
+                pipelineFinisher.finishInstance(instance);
+                System.out.print(".");
+            }
         }
 
     }
+
+    @Override
+    public void close() {
+        for (PipelineFinisher pipelineFinisher : pipelineFinishers) {
+            pipelineFinisher.close();
+        }
+    }
+
     /**
      * Reads the dataset, passes it for sequential processing by the tasks and finishes the pipeline.
      * Eventually, the finisher
@@ -76,6 +101,8 @@ public class Pipeline implements IPipeline {
             dataset = pipelineTask.start(dataset);
         }
 
-        pipelineFinisher.finishPipeline(dataset);
+        for (PipelineFinisher pipelineFinisher : pipelineFinishers) {
+            pipelineFinisher.finishPipeline(dataset);
+        }
     }
 }

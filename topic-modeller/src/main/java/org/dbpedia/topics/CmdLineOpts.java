@@ -33,7 +33,7 @@ class CmdLineOpts {
             .desc("Which data should the pipeline be run on? Possible values are 'abstracts' and 'wikidump'.").hasArgs().argName("reader").build();
 
     public static final Option FINISHER = Option.builder("F").longOpt("finisher")
-            .desc("How should the pipeline finish. Possible values are 'mongo'.").hasArg().argName("finisher").build();
+            .desc("How should the pipeline finish. Possible values are 'mongo', 'json'.").hasArgs().argName("finishers").build();
 
     public static final Option IN_MEMORY = Option.builder("m").longOpt("in-memory")
             .desc("read the triple files specified in props.properties into memory to provide much faster annotation. be sure to provide sufficient heap size with -Xmx64g")
